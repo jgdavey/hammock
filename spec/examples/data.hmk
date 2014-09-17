@@ -1,0 +1,4 @@
+(map foo
+     {:foo "bar"
+      :bar 1
+      :quux 1.4})

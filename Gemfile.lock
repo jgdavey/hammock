@@ -1,0 +1,10 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    hamster (0.4.3)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  hamster
