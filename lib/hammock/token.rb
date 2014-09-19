@@ -1,6 +1,5 @@
 module Hammock
   Token = Struct.new(:name, :token) do
-    def inspect; token.inspect; end
     def to_a; token; end
   end
 

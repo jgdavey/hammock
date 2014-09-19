@@ -1,11 +1,17 @@
+require 'hammock/atom'
+require 'hammock/cons_cell'
+require 'hammock/map'
+require 'hammock/set'
+require 'hammock/symbol'
 require 'hammock/token'
+require 'hammock/vector'
 
 module Hammock
   class Reader
     TOKENS = {
-      "true" => Token.new(:TRUE, true),
-      "false" => Token.new(:FALSE, false),
-      "nil" => Token.new(:NIL, nil)
+      "true" => true,
+      "false" => false,
+      "nil" => nil
     }
 
     MACROS = {
@@ -60,25 +66,29 @@ module Hammock
           break ret
         else
           token = read_token(io, char)
-          break TOKENS.fetch(token) { Token.new(:SYMBOL, token) }
+          break TOKENS.fetch(token) { Symbol.intern(token) }
         end
       end
     end
 
     def read_list(io, char)
-      TokenCollection.new :LIST, read_delimited_list(")", io)
+      list = read_delimited_list(")", io)
+      ConsCell.from_array list
     end
 
     def read_vector(io, char)
-      TokenCollection.new :VECTOR, read_delimited_list("]", io)
+      vec = read_delimited_list("]", io)
+      Vector.from_array vec
     end
 
     def read_map(io, char)
-      TokenCollection.new :MAP, read_delimited_list("}", io)
+      map = read_delimited_list("}", io)
+      Map.from_array map
     end
 
     def read_set(io, char)
-      TokenCollection.new :SET, read_delimited_list("}", io)
+      set = read_delimited_list("}", io)
+      Set.from_array set
     end
 
     def read_delimited_list(delimiter, io)
@@ -129,7 +139,7 @@ module Hammock
         end
         keyword << char
       end
-      Token.new(:KEYWORD, keyword.to_sym)
+      keyword.to_sym
     end
 
     def read_stringish(io, open_quote)
@@ -193,12 +203,12 @@ module Hammock
 
     def read_string(io, open_quote)
       str = read_stringish(io, open_quote)
-      Token.new(:STRING, str)
+      str
     end
 
     def read_regex(io, open_quote)
       str = read_stringish(io, open_quote)
-      Token.new(:REGEX, str)
+      Regexp.new(str)
     end
 
     def read_char(io, escape)
@@ -217,7 +227,7 @@ module Hammock
         c
       end
 
-      Token.new(:CHARACTER, char)
+      char
     end
 
     def read_comment(io, char)
@@ -244,9 +254,9 @@ module Hammock
     def match_number(digits)
       case digits
       when /^[\d]+$/
-        Token.new(:INTEGER, digits.to_i)
+        digits.to_i
       when /^\d+\.\d+$/
-        Token.new(:FLOAT, digits.to_f)
+        digits.to_f
       end
     end
 
