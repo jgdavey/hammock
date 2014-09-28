@@ -1,0 +1,8 @@
+(in-ns 'foo)
+(def bar (fn* bar [a] a))
+(def baz (fn* baz [a] (bar a)))
+(baz 1)
+(foo/baz 1)
+
+(in-ns 'quux)
+(foo/baz 1)

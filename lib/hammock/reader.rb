@@ -1,30 +1,45 @@
 require 'delegate'
+require 'hammock/meta'
 require 'hammock/cons_cell'
 require 'hammock/map'
 require 'hammock/set'
 require 'hammock/symbol'
 require 'hammock/token'
 require 'hammock/vector'
+require 'hammock/quote'
 
 module Hammock
   class Reader
     class LineNumberingIO < SimpleDelegator
-      attr_reader :line_number
+      attr_reader :line_number, :column_number
+
       NEWLINE = "\n".freeze
 
       def initialize(io)
+        @column_number = 0
         @line_number = 1
+        @char = nil
         super
       end
 
       def getc
-        __getobj__.getc.tap do |char|
-          @line_number += 1 if char == NEWLINE
+        @column_number += 1
+        @char = __getobj__.getc
+        if @char == NEWLINE
+          @line_number += 1
+          @last_line_length = @column_number
+          @column_number = 0
         end
+        @char
       end
 
       def backc
         __getobj__.seek(-1, IO::SEEK_CUR)
+        if @char == NEWLINE
+          @line_number -= 1
+          @column_number = @last_line_length
+        end
+        @char = nil
       end
     end
 
@@ -45,12 +60,15 @@ module Hammock
       ?" => :read_string,
       ?; => :read_comment,
       ?# => :read_dispatched,
+      ?' => :read_quoted,
+      ?^ => :read_meta,
     "\\" => :read_char
     }
 
     DISPATCH_MACROS = {
       ?{ => :read_set,
-      ?" => :read_regex
+      ?" => :read_regex,
+      ?^ => :read_meta
     }
 
     HEXCHARS = "0123456789ABCDEF".split("")
@@ -64,7 +82,7 @@ module Hammock
     end
 
     def back(io)
-      io.seek(-1, IO::SEEK_CUR)
+      io.backc
     end
 
     def ensure_line_numbering(io)
@@ -75,6 +93,11 @@ module Hammock
       end
     end
 
+    def read_all(io)
+      io = ensure_line_numbering(io)
+      yield read(io) until io.eof?
+    end
+
     def read(io)
       io = ensure_line_numbering(io)
       until io.eof?
@@ -83,7 +106,7 @@ module Hammock
           char = io.getc
         end
 
-        raise "EOF" unless char
+        raise "Unexpected EOF at line #{io.line_number}" unless char
 
         if char.match(/\d/)
           break read_number(io, char)
@@ -97,6 +120,8 @@ module Hammock
           token = read_token(io, char)
           break TOKENS.fetch(token) { Symbol.intern(token) }
         end
+
+        break if io.eof?
       end
     end
 
@@ -129,7 +154,7 @@ module Hammock
           char = io.getc
         end
 
-        raise "EOF" unless char
+        raise "Unexpected EOF at line #{io.line_number}" unless char
 
         break if char == delimiter
 
@@ -148,7 +173,7 @@ module Hammock
     end
 
     def read_rparen(io, char)
-      raise "Unexpected )"
+      raise "Unexpected ) at line #{io.line_number}"
     end
 
     def read_keyword(io, colon)
@@ -198,7 +223,7 @@ module Hammock
           when ?u
             char = io.getc
             unless HEXCHARS.include?(char)
-              raise "Expected only hex characters in unicode escape sequence"
+              raise "Expected only hex characters in unicode escape sequence: line #{io.line_number}"
             end
             char = read_unicode_char(io, char)
           end
@@ -268,7 +293,7 @@ module Hammock
     def read_dispatched(io, _)
       char = io.getc
       unless char
-        raise "EOF"
+        raise "Unexpected EOF at line #{io.line_number}" unless char
       end
 
       method = DISPATCH_MACROS.fetch(char)
@@ -277,7 +302,7 @@ module Hammock
 
     def read_number(io, char)
       digits = read_token(io, char)
-      match_number(digits) or raise "Unable to parse number: #{digits}"
+      match_number(digits) or raise "Unable to parse number: #{digits} at line #{io.line_number}"
     end
 
     def match_number(digits)
@@ -287,6 +312,28 @@ module Hammock
       when /^\d+\.\d+$/
         digits.to_f
       end
+    end
+
+    def read_quoted(io, quote_mark)
+      Hammock::Quote.new read(io)
+    end
+
+    def read_meta(io, hat)
+      meta = read(io)
+      if ::Symbol === meta
+        meta = Map.from_array [meta, true]
+      end
+      following = read(io)
+
+      unless Meta === following
+        raise "#{following.inspect} does not implement metadata"
+      end
+
+      if following.meta
+        meta = following.meta.merge(meta)
+      end
+
+      following.with_meta(meta)
     end
 
     def read_token(io, initch)

@@ -1,5 +1,8 @@
+require 'hammock/list_evaluator'
+
 module Hammock
   class ConsCell
+    include Meta
     include Enumerable
 
     def self.from_array(array)
@@ -8,10 +11,16 @@ module Hammock
       end
     end
 
+    def self.alloc_from(other, meta=nil)
+      new(other.car, other.cdr, meta)
+    end
+
     attr_reader :car, :cdr
 
-    def initialize(car, cdr)
-      @car, @cdr = car, cdr
+    def initialize(car, cdr, meta=nil)
+      @meta = meta
+      @car = car
+      @cdr = cdr
     end
 
     def ==(other)
@@ -27,6 +36,10 @@ module Hammock
       self.class.new(item, self)
     end
 
+    def evaluate(env)
+      ListEvaluator.evaluate(env, self)
+    end
+
     def each
       cell = self
       loop do
@@ -40,5 +53,6 @@ module Hammock
     def inspect
       "(#{self.map(&:inspect).join(' ')})"
     end
+    alias to_s inspect
   end
 end

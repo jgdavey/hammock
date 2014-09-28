@@ -141,6 +141,59 @@ describe Hammock::Reader do
     expect(result).to eq Regexp.new "[\\d]+"
   end
 
+  it "reads symbols" do
+    str = '(map foo)'
+    result = read_string str
+    expect(result).to eq Hammock::ConsCell.from_array [
+      Hammock::Symbol.intern("map"),
+      Hammock::Symbol.intern("foo")]
+  end
+
+  it "reads Ruby constants" do
+    str = 'Object'
+    result = read_string str
+    expect(result).to eq Hammock::Symbol.intern("Object")
+  end
+
+  it "reads quoted symbols" do
+    str = "'foo"
+    result = read_string str
+    expect(result).to eq Hammock::Quote.new Hammock::Symbol.intern("foo")
+  end
+
+  it "reads quoted lists" do
+    str = "'(foo bar)"
+    result = read_string str
+    expected = Hammock::Quote.new(Hammock::ConsCell.from_array [Hammock::Symbol.intern("foo"), Hammock::Symbol.intern("bar")])
+    expect(result).to eq expected
+  end
+
+  it "assigns metadata to the following form" do
+    str = "^{:foo true} [1 2]"
+    result = read_string str
+    expected_meta = Hammock::Map.from_array [:foo, true]
+    expect(result.meta).to eq expected_meta
+  end
+
+  it "assigns keyword metadata" do
+    str = "^:foo [1 2]"
+    result = read_string str
+    expected_meta = Hammock::Map.from_array [:foo, true]
+    expect(result.meta).to eq expected_meta
+  end
+
+  it "assigns keyword metadata" do
+    str = "^:foo ^:bar [1 2]"
+    result = read_string str
+    expected_meta = Hammock::Map.from_array [:foo, true, :bar, true]
+    expect(result.meta).to eq expected_meta
+  end
+
+  it "raises error when attempting to apply meta-data to non-meta-data objects" do
+    str = '^:foo ^:bar "hello"'
+    expect { read_string(str) }.to raise_error
+  end
+
   it "reads from a file" do
     reader = Hammock::Reader.new
     result = nil

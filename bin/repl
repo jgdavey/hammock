@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+lib = File.expand_path("../../lib", __FILE__)
+$:.unshift(lib) unless $:.include?(lib)
+
+require 'hammock'
+require 'hammock/rt'
+require 'readline'
+require 'stringio'
+
+Hammock::RT.bootstrap!
+
+reader = Hammock::Reader.new
+env = Hammock::RT.global_env
+
+while line = Readline.readline('> ', true)
+  begin
+    line = StringIO.new(line)
+    p reader.read(line).evaluate(env)
+  rescue Exception => ex
+    puts "ERROR: #{ex}"
+    puts ex.backtrace
+  end
+end
+

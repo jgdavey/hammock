@@ -1,3 +1,9 @@
+PATH
+  remote: .
+  specs:
+    hammock (0.0.1.alpha)
+      hamster (~> 0.4.3)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -7,4 +13,5 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  hamster
+  bundler (~> 1.6)
+  hammock!
