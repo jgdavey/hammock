@@ -1,4 +1,4 @@
-require 'hammock/atom'
+require 'delegate'
 require 'hammock/cons_cell'
 require 'hammock/map'
 require 'hammock/set'
@@ -8,6 +8,26 @@ require 'hammock/vector'
 
 module Hammock
   class Reader
+    class LineNumberingIO < SimpleDelegator
+      attr_reader :line_number
+      NEWLINE = "\n".freeze
+
+      def initialize(io)
+        @line_number = 1
+        super
+      end
+
+      def getc
+        __getobj__.getc.tap do |char|
+          @line_number += 1 if char == NEWLINE
+        end
+      end
+
+      def backc
+        __getobj__.seek(-1, IO::SEEK_CUR)
+      end
+    end
+
     TOKENS = {
       "true" => true,
       "false" => false,
@@ -47,7 +67,16 @@ module Hammock
       io.seek(-1, IO::SEEK_CUR)
     end
 
+    def ensure_line_numbering(io)
+      if LineNumberingIO === io
+        io
+      else
+        LineNumberingIO.new io
+      end
+    end
+
     def read(io)
+      io = ensure_line_numbering(io)
       until io.eof?
         char = io.getc
         while whitespace?(char)
