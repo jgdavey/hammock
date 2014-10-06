@@ -103,14 +103,14 @@ module Hammock
     end
 
     class InNS
-      def call(env, form)
+      def call(_, env, form)
         ns = Namespace.find_or_create(form.evaluate(env))
         CURRENT_NS.bind_root(ns)
       end
     end
 
     class Def
-      def call(env, sym, val)
+      def call(_, env, sym, val)
         ns = CURRENT_NS.deref
         ns.intern(sym).tap do |var|
           var.bind_root(val.evaluate(env))
@@ -120,7 +120,7 @@ module Hammock
     end
 
     class If
-      def call(env, predicate, then_clause, else_clause)
+      def call(_, env, predicate, then_clause, else_clause)
         if predicate.evaluate(env)
           then_clause.evaluate(env)
         else
@@ -130,7 +130,7 @@ module Hammock
     end
 
     class Do
-      def call(env, *body)
+      def call(_, env, *body)
         ret = nil
         b = body.to_a
         until b.empty?
@@ -142,7 +142,7 @@ module Hammock
     end
 
     class Let
-      def call(env, bindings, *body)
+      def call(_, env, bindings, *body)
         unless bindings.count.even?
           raise "Odd number of binding forms passed to let"
         end
@@ -156,12 +156,12 @@ module Hammock
     end
 
     class Fn
-      def call(env, *args)
+      def call(list, env, *args)
         if Symbol === args.first
-          internal_name = args.first.name
+          name = args.first.name
           args.shift
         else
-          internal_name = nil
+          name = nil
         end
 
         bindings, *body = args
@@ -169,12 +169,14 @@ module Hammock
           raise "Function declarations must begin with a binding form"
         end
 
-        Function.create(internal_name, CURRENT_NS.deref, env, bindings, *body)
+        Function.create(name, CURRENT_NS.deref, env, bindings, *body).tap do |fn|
+          fn.meta = list.meta
+        end
       end
     end
 
     class Host
-      def call(env, target, *args)
+      def call(_, env, target, *args)
         method = args.first
         arguments = []
 

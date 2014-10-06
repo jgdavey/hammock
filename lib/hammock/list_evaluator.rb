@@ -58,16 +58,17 @@ module Hammock
       form
     end
 
-    def evaluate(env, cons_cell)
-      if s = special(cons_cell)
-        return s.call(env, *cons_cell.cdr)
+    def evaluate(env, list)
+      if s = special(list)
+        return s.call(list, env, *list.cdr)
       end
 
-      list = macroexpand(env, cons_cell)
-
+      if Hammock::Symbol === list.car
+        list = macroexpand(env, list)
+      end
 
       if s = special(list)
-        return s.call(env, *list.cdr)
+        return s.call(list, env, *list.cdr)
       end
 
       head = list.car
@@ -80,7 +81,7 @@ module Hammock
 
       if Function === fn
         args = (list.cdr || []).map { |elem| elem.evaluate(env) }
-        fn.call cons_cell, env, *args
+        fn.call list, env, *args
       else
         raise "What? #{fn}"
       end

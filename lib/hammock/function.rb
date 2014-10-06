@@ -1,8 +1,16 @@
 module Hammock
   class Function
+    include Meta
     AMPERSAND = Symbol.intern("&")
 
     attr_reader :body, :args
+    attr_writer :meta
+
+    def self.alloc_from(fn, meta)
+      new(fn.internal_name, fn.ns, fn.env, fn.orig_args, *fn.body).tap do |fn|
+        fn.meta = meta
+      end
+    end
 
     def self.create(*args)
       new(*args)
@@ -14,6 +22,7 @@ module Hammock
       @env = env
       @orig_args = args
       @locals, @args, @variadic, @variadic_name = unpack_args(args)
+      @meta = nil
       @body = body
     end
 
@@ -61,6 +70,10 @@ module Hammock
         form.evaluate(env)
       end
     end
+
+    protected
+
+    attr_reader :orig_args, :ns, :env, :internal_name
 
     private
 

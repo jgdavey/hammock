@@ -8,9 +8,7 @@
 
 (in-ns 'clojure.core)
 
-; (ns ^{:doc "The core Clojure language."
-;        :author "Rich Hickey"}
-;   clojure.core)
+(def _RT_ (. Object (const_get "Hammock::RT")))
 
 ; (def unquote)
 ; (def unquote-splicing)
@@ -21,8 +19,6 @@
 ;    :added "1.0"}
 ;   list (. clojure.lang.PersistentList creator))
 
-(def _RT_ (. Object (const_get "Hammock::RT")))
-
 (def
   ^{:arglists '([x seq])
     :doc "Returns a new seq where x is the first element and seq is
@@ -31,7 +27,7 @@
     :static true}
  cons (fn* ^:static cons [x seq] (. _RT_ (cons x seq))))
 
-; ;during bootstrap we don't have destructuring let, loop or fn, will redefine later
+; during bootstrap we don't have destructuring let, loop or fn, will redefine later
 (def
   ^{:macro true
     :added "1.0"}
@@ -42,12 +38,11 @@
 ;    :added "1.0"}
 ;  loop (fn* loop [&form &env & decl] (cons 'loop* decl)))
 
-; (def
-;  ^{:macro true
-;    :added "1.0"}
-;  fn (fn* fn [&form &env & decl] 
-;          (.withMeta ^clojure.lang.IObj (cons 'fn* decl) 
-;                     (.meta ^clojure.lang.IMeta &form))))
+(def
+ ^{:macro true
+   :added "1.0"}
+ fn (fn* fn [&form &env & decl]
+         (.with_meta (cons 'fn* decl) (.meta &form))))
 
 ; (def
 ;  ^{:arglists '([coll])
