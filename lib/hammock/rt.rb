@@ -2,6 +2,7 @@ require 'pathname'
 require 'hammock/reader'
 require 'hammock/namespace'
 require 'hammock/environment'
+require 'hammock/cons_cell'
 require 'hammock/var'
 require 'hammock/vector'
 require 'hammock/function'
@@ -23,6 +24,10 @@ module Hammock
         raise ArgumentError, "must provide an existing namespace to intern a var"
       end
       ns.find_var!(sym.name)
+    end
+
+    def self.list(*args)
+      ConsCell.from_array(args)
     end
 
     def self.global_env
@@ -164,7 +169,7 @@ module Hammock
           raise "Function declarations must begin with a binding form"
         end
 
-        Function.new(internal_name, CURRENT_NS.deref, env, bindings, *body)
+        Function.create(internal_name, CURRENT_NS.deref, env, bindings, *body)
       end
     end
 
@@ -172,6 +177,7 @@ module Hammock
       def call(env, target, *args)
         method = args.first
         arguments = []
+
         if ConsCell === args.first
           method, *arguments = *args.first
           arguments = arguments.map {|arg| arg.evaluate(env)}
