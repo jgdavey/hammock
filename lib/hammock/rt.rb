@@ -2,6 +2,8 @@ require 'pathname'
 require 'hammock/reader'
 require 'hammock/namespace'
 require 'hammock/environment'
+require 'hammock/loop_locals'
+require 'hammock/recur_locals'
 require 'hammock/cons_cell'
 require 'hammock/var'
 require 'hammock/vector'
@@ -84,8 +86,11 @@ module Hammock
         "let*"  => Let.new,
         "do*"   => Do.new,
         "fn*"   => Fn.new,
+        "loop*" => Loop.new,
+        "recur" => Recur.new,
         "in-ns" => InNS.new,
-        "."     => Host.new
+        "."     => Host.new,
+        "var"   => VarExpr.new
       }
     end
 
@@ -151,7 +156,7 @@ module Hammock
           env = env.bind(k.name, v.evaluate(env))
         end
 
-        Do.new.call(env, *body)
+        Do.new.call(_, env, *body)
       end
     end
 
@@ -175,6 +180,54 @@ module Hammock
       end
     end
 
+    class Loop
+      def call(form, env, bindings, *body)
+        if body.length < 1
+          raise ArgumentError, "loop* takes at least two args"
+        end
+
+        unless Vector === bindings
+          raise ArgumentError, "loop* takes a vector as it's first argument"
+        end
+
+        if bindings && (bindings.length % 2 != 0)
+          raise ArgumentError, "loop* takes a even number of bindings"
+        end
+
+        locals = LoopLocals.empty
+
+        bindings.to_a.each_slice(2) do |k, v|
+          locals = locals.bind(k.name, v.evaluate(env))
+        end
+
+        loop do
+          ret = catch(:recur) do
+            env = env.merge(locals)
+            ret = nil
+            b = body.to_a
+            until b.empty?
+              ret = b.first.evaluate(env)
+              b.shift
+            end
+            ret
+          end
+
+          if RecurLocals === ret
+            locals = locals.rebind(ret)
+          else
+            break ret
+          end
+        end
+      end
+    end
+
+    class Recur
+      def call(_, env, *args)
+        args = args.map {|arg| arg.evaluate(env)}
+        throw(:recur, RecurLocals.new(args))
+      end
+    end
+
     class Host
       def call(_, env, target, *args)
         method = args.first
@@ -185,6 +238,13 @@ module Hammock
           arguments = arguments.map {|arg| arg.evaluate(env)}
         end
         target.evaluate(env).send(method.name, *arguments)
+      end
+    end
+
+    class VarExpr
+      def call(list, env, sym)
+        namespace = env["__namespace__"] || sym.ns || CURRENT_NS.deref
+        namespace.has_var?(sym.name) && namespace.find_var(sym.name)
       end
     end
   end

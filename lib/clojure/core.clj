@@ -33,10 +33,10 @@
     :added "1.0"}
   let (fn* let [&form &env & decl] (cons 'let* decl)))
 
-; (def
-;  ^{:macro true
-;    :added "1.0"}
-;  loop (fn* loop [&form &env & decl] (cons 'loop* decl)))
+(def
+ ^{:macro true
+   :added "1.0"}
+ loop (fn* loop [&form &env & decl] (cons 'loop* decl)))
 
 (def
  ^{:macro true
