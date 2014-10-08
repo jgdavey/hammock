@@ -2,11 +2,13 @@ PATH
   remote: .
   specs:
     hammock (0.0.1.alpha)
+      atomic (~> 1.1)
       hamster (~> 0.4.3)
 
 GEM
   remote: https://rubygems.org/
   specs:
+    atomic (1.1.16)
     hamster (0.4.3)
 
 PLATFORMS

@@ -35,6 +35,7 @@ module Hammock
     def cons(item)
       self.class.new(item, self)
     end
+    alias conj cons
 
     def evaluate(env)
       ListEvaluator.evaluate(env, self)

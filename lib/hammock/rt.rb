@@ -1,3 +1,4 @@
+require 'atomic'
 require 'pathname'
 require 'hammock/reader'
 require 'hammock/namespace'
@@ -19,6 +20,12 @@ module Hammock
     ERR = Var.intern(CLOJURE_NS, Symbol.intern("*err*"), $stderr).dynamic!
     LOADPATH = Var.intern(CLOJURE_NS, Symbol.intern("*load-path*"),
                           Hammock::Vector.from_array($LOAD_PATH)).dynamic!
+    ID = Atomic.new(0)
+
+
+    def self.next_id
+      ID.update {|v| v + 1}
+    end
 
     def self.var(*args)
       sym = Symbol.intern(*args)
