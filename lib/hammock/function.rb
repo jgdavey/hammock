@@ -62,15 +62,22 @@ module Hammock
 
       env = @env.bind("__namespace__", @ns)
 
-      env = arity.bind_env(env, args)
+      locals = args
 
-      ret = nil
-      body = arity.body.dup
-      until body.empty?
-        ret = body.first.evaluate(env)
-        body.shift
+      loop do
+        env = arity.bind_env(env, locals.to_a)
+        ret = nil
+        body = arity.body.dup
+        until body.empty?
+          ret = body.first.evaluate(env)
+          body.shift
+        end
+        if RecurLocals === ret
+          locals = ret
+        else
+          break ret
+        end
       end
-      ret
     end
 
     protected
@@ -102,7 +109,9 @@ module Hammock
         end
 
         if variadic?
-          lastarg = ConsCell.from_array(args[max..-1])
+          lastarg = nil
+          tail = args[max..-1]
+          lastarg = ConsCell.from_array(tail) if tail.any?
           env = env.bind @variadic_name, lastarg
         end
 

@@ -21,6 +21,10 @@ module Hammock
       @rev = 0
     end
 
+    def macro!
+      @meta = meta.assoc :macro, true
+    end
+
     def dynamic!
       @dynamic = true
       self

@@ -44,7 +44,15 @@ module Hammock
         "*ns*" => CURRENT_NS,
         "*in*" => IN,
         "*out*" => OUT,
-        "*err*" => ERR
+        "*err*" => ERR,
+        "RT" => self,
+        "Map" => Map,
+        "Vector" => Vector,
+        "Set" => Hammock::Set,
+        "Symbol" => Hammock::Symbol,
+        "Keyword" => ::Symbol,
+        "ConsCell" => ConsCell,
+        "Meta" => Meta
       )
     end
 
@@ -95,7 +103,9 @@ module Hammock
         "fn*"   => Fn.new,
         "loop*" => Loop.new,
         "recur" => Recur.new,
+        "throw" => Throw.new,
         "in-ns" => InNS.new,
+        "list"  => List.new,
         "."     => Host.new,
         "var"   => VarExpr.new
       }
@@ -116,6 +126,10 @@ module Hammock
 
     def self.conj(sequence, val)
       sequence.conj(val)
+    end
+
+    def self.assoc(sequence, key, val)
+      sequence.assoc(key, val)
     end
 
     def self.first(sequence)
@@ -145,6 +159,22 @@ module Hammock
           ConsCell.from_array sequence.to_a
         end
       end
+    end
+
+    def self.seq?(sequence)
+      ConsCell === sequence
+    end
+
+    def self.count(sequence)
+      sequence.count
+    end
+
+    def self.equal(a, b)
+      a == b
+    end
+
+    def self.subvec(vector, start_idx, end_idx)
+      Vector::SubVector.new(vector.meta, vector, start_idx, end_idx)
     end
 
     class InNS
@@ -250,16 +280,14 @@ module Hammock
         end
 
         loop do
-          ret = catch(:recur) do
-            env = env.merge(locals)
-            ret = nil
-            b = body.to_a
-            until b.empty?
-              ret = b.first.evaluate(env)
-              b.shift
-            end
-            ret
+          env = env.merge(locals)
+          ret = nil
+          b = body.to_a
+          until b.empty?
+            ret = b.first.evaluate(env)
+            b.shift
           end
+          ret
 
           if RecurLocals === ret
             locals = locals.rebind(ret)
@@ -270,10 +298,22 @@ module Hammock
       end
     end
 
+    class List
+      def call(_, env, *args)
+        ConsCell.from_array(args)
+      end
+    end
+
     class Recur
       def call(_, env, *args)
         args = args.map {|arg| arg.evaluate(env)}
-        throw(:recur, RecurLocals.new(args))
+        RecurLocals.new(args)
+      end
+    end
+
+    class Throw
+      def call(_, env, message_or_error)
+        raise message_or_error.evaluate(env)
       end
     end
 

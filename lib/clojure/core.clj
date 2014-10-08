@@ -8,16 +8,8 @@
 
 (in-ns 'clojure.core)
 
-(def _RT_ (. Object (const_get "Hammock::RT")))
-
 ; (def unquote)
 ; (def unquote-splicing)
-
-; (def
-;  ^{:arglists '([& items])
-;    :doc "Creates a new list containing the items."
-;    :added "1.0"}
-;   list (. clojure.lang.PersistentList creator))
 
 (def
   ^{:arglists '([x seq])
@@ -25,7 +17,7 @@
          the rest."
     :added "1.0"
     :static true}
- cons (fn* ^:static cons [x seq] (. _RT_ (cons x seq))))
+ cons (fn* ^:static cons [x seq] (. RT (cons x seq))))
 
 ; during bootstrap we don't have destructuring let, loop or fn, will redefine later
 (def
@@ -50,7 +42,7 @@
     argument. If coll is nil, returns nil."
    :added "1.0"
    :static true}
- first (fn ^:static first [coll] (. _RT_ (first coll))))
+ first (fn ^:static first [coll] (. RT (first coll))))
 
 (def
  ^{:arglists '([coll])
@@ -58,7 +50,7 @@
   argument.  If there are no more items, returns nil."
    :added "1.0"
    :static true}
- next (fn ^:static next [x] (. _RT_ (next x))))
+ next (fn ^:static next [x] (. RT (next x))))
 
 (def
  ^{:arglists '([coll])
@@ -66,7 +58,7 @@
   argument."
    :added "1.0"
    :static true}
- rest (fn ^:static rest [x] (. _RT_ (more x))))
+ rest (fn ^:static rest [x] (. RT (more x))))
 
 (def
  ^{:arglists '([coll x] [coll x & xs])
@@ -78,12 +70,11 @@
  conj (fn ^:static conj
         ([] [])
         ([coll] coll)
-        ([coll x] (. _RT_ (conj coll x)))
+        ([coll x] (. RT (conj coll x)))
         ([coll x & xs]
-         (loop [coll coll, x x, xs xs]
-            (if xs
-               (recur (conj coll x) (first xs) (next xs))
-               (conj coll x))))))
+         (if xs
+            (recur (conj coll x) (first xs) (next xs))
+            (conj coll x)))))
 
 (def
  ^{:doc "Same as (first (next x))"
@@ -127,7 +118,7 @@
     native Ruby arrays, and any object that implements Enumerable"
    :added "1.0"
    :static true}
- seq (fn ^:static seq [coll] (. _RT_ (seq coll))))
+ seq (fn ^:static seq [coll] (. RT (seq coll))))
 
 (def
  ^{:arglists '([^Class c x])
@@ -136,12 +127,12 @@
    :added "1.0"}
  instance? (fn instance? [c x] (. c (=== x))))
 
-; (def
-;  ^{:arglists '([x])
-;    :doc "Return true if x implements ISeq"
-;    :added "1.0"
-;    :static true}
-;  seq? (fn ^:static seq? [x] (instance? clojure.lang.ISeq x)))
+(def
+ ^{:arglists '([x])
+   :doc "Return true if x is a Seq"
+   :added "1.0"
+   :static true}
+ seq? (fn ^:static seq? [x] (.seq? RT x)))
 
 ; (def
 ;  ^{:arglists '([x])
@@ -162,34 +153,34 @@
    :doc "Return true if x is a Hammock Map"
    :added "1.0"
    :static true}
- map? (fn ^:static map? [x] (instance? (.const_get Object "Hammock::Map") x)))
+ map? (fn ^:static map? [x] (instance? Map x)))
 
 (def
  ^{:arglists '([x])
    :doc "Return true if x is a Hammock Vector"
    :added "1.0"
    :static true}
- vector? (fn ^:static vector? [x] (instance? (.const_get Object "Hammock::Vector") x)))
+ vector? (fn ^:static vector? [x] (instance? Vector x)))
 
-; (def
-;  ^{:arglists '([map key val] [map key val & kvs])
-;    :doc "assoc[iate]. When applied to a map, returns a new map of the
-;     same (hashed/sorted) type, that contains the mapping of key(s) to
-;     val(s). When applied to a vector, returns a new vector that
-;     contains val at index. Note - index must be <= (count vector)."
-;    :added "1.0"
-;    :static true}
-;  assoc
-;  (fn ^:static assoc
-;    ([map key val] (. clojure.lang.RT (assoc map key val)))
-;    ([map key val & kvs]
-;     (let [ret (assoc map key val)]
-;       (if kvs
-;         (if (next kvs)
-;           (recur ret (first kvs) (second kvs) (nnext kvs))
-;           (throw (IllegalArgumentException.
-;                   "assoc expects even number of arguments after map/vector, found odd number")))
-;         ret)))))
+(def
+ ^{:arglists '([map key val] [map key val & kvs])
+   :doc "assoc[iate]. When applied to a map, returns a new map of the
+    same (hashed/sorted) type, that contains the mapping of key(s) to
+    val(s). When applied to a vector, returns a new vector that
+    contains val at index. Note - index must be <= (count vector)."
+   :added "1.0"
+   :static true}
+ assoc
+ (fn ^:static assoc
+   ([map key val] (. RT (assoc map key val)))
+   ([map key val & kvs]
+    (let [ret (assoc map key val)]
+      (if kvs
+        (if (next kvs)
+          (recur ret (first kvs) (second kvs) (nnext kvs))
+          (throw (ArgumentError.
+                  "assoc expects even number of arguments after map/vector, found odd number")))
+        ret)))))
 
 ; ;;;;;;;;;;;;;;;;; metadata ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def
@@ -198,7 +189,7 @@
    :added "1.0"
    :static true}
  meta (fn ^:static meta [x]
-        (if (instance? (. Object (const_get "Hammock::Meta")) x)
+        (if (instance? Meta x)
           (. x (meta)))))
 
 (def
@@ -210,33 +201,33 @@
  with-meta (fn ^:static with-meta [x m]
              (. x (with-meta m))))
 
-; (def ^{:private true :dynamic true}
-;   assert-valid-fdecl (fn [fdecl]))
+(def ^{:private true :dynamic true}
+  assert-valid-fdecl (fn [fdecl]))
 
-; (def
-;  ^{:private true}
-;  sigs
-;  (fn [fdecl]
-;    (assert-valid-fdecl fdecl)
-;    (let [asig
-;          (fn [fdecl]
-;            (let [arglist (first fdecl)
-;                  ;elide implicit macro args
-;                  arglist (if (clojure.lang.Util/equals '&form (first arglist))
-;                            (clojure.lang.RT/subvec arglist 2 (clojure.lang.RT/count arglist))
-;                            arglist)
-;                  body (next fdecl)]
-;              (if (map? (first body))
-;                (if (next body)
-;                  (with-meta arglist (conj (if (meta arglist) (meta arglist) {}) (first body)))
-;                  arglist)
-;                arglist)))]
-;      (if (seq? (first fdecl))
-;        (loop [ret [] fdecls fdecl]
-;          (if fdecls
-;            (recur (conj ret (asig (first fdecls))) (next fdecls))
-;            (seq ret)))
-;        (list (asig fdecl))))))
+(def
+ ^{:private true}
+ sigs
+ (fn [fdecl]
+   (assert-valid-fdecl fdecl)
+   (let [asig
+         (fn [fdecl]
+           (let [arglist (first fdecl)
+                 ;elide implicit macro args
+                 arglist (if (.equal RT '&form (first arglist))
+                           (.subvec RT arglist 2 (.count RT arglist))
+                           arglist)
+                 body (next fdecl)]
+             (if (map? (first body))
+               (if (next body)
+                 (with-meta arglist (conj (if (meta arglist) (meta arglist) {}) (first body)))
+                 arglist)
+               arglist)))]
+     (if (seq? (first fdecl))
+       (loop [ret [] fdecls fdecl]
+         (if fdecls
+           (recur (conj ret (asig (first fdecls))) (next fdecls))
+           (seq ret)))
+       (list (asig fdecl))))))
 
 
 (def
@@ -250,70 +241,69 @@
                (recur (next s))
                (first s)))))
 
-; (def
-;  ^{:arglists '([coll])
-;    :doc "Return a seq of all but the last item in coll, in linear time"
-;    :added "1.0"
-;    :static true}
-;  butlast (fn ^:static butlast [s]
-;            (loop [ret [] s s]
-;              (if (next s)
-;                (recur (conj ret (first s)) (next s))
-;                (seq ret)))))
+(def
+ ^{:arglists '([coll])
+   :doc "Return a seq of all but the last item in coll, in linear time"
+   :added "1.0"
+   :static true}
+ butlast (fn ^:static butlast [s]
+           (loop [ret [] s s]
+             (if (next s)
+               (recur (conj ret (first s)) (next s))
+               (seq ret)))))
 
-; (def
+(def
+ ^{:doc "Same as (def name (fn [params* ] exprs*)) or (def
+    name (fn ([params* ] exprs*)+)) with any doc-string or attrs added
+    to the var metadata. prepost-map defines a map with optional keys
+    :pre and :post that contain collections of pre or post conditions."
+   :arglists '([name doc-string? attr-map? [params*] prepost-map? body]
+               [name doc-string? attr-map? ([params*] prepost-map? body)+ attr-map?])
+   :added "1.0"}
+ defn (fn defn [&form &env name & fdecl]
+        ;; Note: Cannot delegate this check to def because of the call to (with-meta name ..)
+        (if (instance? Symbol name)
+          nil
+          (throw (ArgumentError. "First argument to defn must be a symbol")))
+        (let [m (if (string? (first fdecl))
+                  {:doc (first fdecl)}
+                  {})
+              fdecl (if (string? (first fdecl))
+                      (next fdecl)
+                      fdecl)
+              m (if (map? (first fdecl))
+                  (conj m (first fdecl))
+                  m)
+              fdecl (if (map? (first fdecl))
+                      (next fdecl)
+                      fdecl)
+              fdecl (if (vector? (first fdecl))
+                      (list fdecl)
+                      fdecl)
+              m (if (map? (last fdecl))
+                  (conj m (last fdecl))
+                  m)
+              fdecl (if (map? (last fdecl))
+                      (butlast fdecl)
+                      fdecl)
+              m (conj {:arglists (list 'quote (sigs fdecl))} m)
+              m (let [inline (:inline m)
+                      ifn (first inline)
+                      iname (second inline)]
+                  ;; same as: (if (and (= 'fn ifn) (not (symbol? iname))) ...)
+                  (if (if (.equal RT 'fn ifn)
+                        (if (instance? Symbol iname) false true))
+                    ;; inserts the same fn name to the inline fn if it does not have one
+                    (assoc m :inline (cons ifn (cons (.intern Symbol (.concat (.name name) "__inliner"))
+                                                     (next inline))))
+                    m))
+              m (conj (if (meta name) (meta name) {}) m)]
+          (list 'def (with-meta name m)
+                ;;todo - restore propagation of fn name
+                ;;must figure out how to convey primitive hints to self calls first
+                (cons `fn fdecl) ))))
 
-;  ^{:doc "Same as (def name (fn [params* ] exprs*)) or (def
-;     name (fn ([params* ] exprs*)+)) with any doc-string or attrs added
-;     to the var metadata. prepost-map defines a map with optional keys
-;     :pre and :post that contain collections of pre or post conditions."
-;    :arglists '([name doc-string? attr-map? [params*] prepost-map? body]
-;                 [name doc-string? attr-map? ([params*] prepost-map? body)+ attr-map?])
-;    :added "1.0"}
-;  defn (fn defn [&form &env name & fdecl]
-;         ;; Note: Cannot delegate this check to def because of the call to (with-meta name ..)
-;         (if (instance? clojure.lang.Symbol name)
-;           nil
-;           (throw (IllegalArgumentException. "First argument to defn must be a symbol")))
-;         (let [m (if (string? (first fdecl))
-;                   {:doc (first fdecl)}
-;                   {})
-;               fdecl (if (string? (first fdecl))
-;                       (next fdecl)
-;                       fdecl)
-;               m (if (map? (first fdecl))
-;                   (conj m (first fdecl))
-;                   m)
-;               fdecl (if (map? (first fdecl))
-;                       (next fdecl)
-;                       fdecl)
-;               fdecl (if (vector? (first fdecl))
-;                       (list fdecl)
-;                       fdecl)
-;               m (if (map? (last fdecl))
-;                   (conj m (last fdecl))
-;                   m)
-;               fdecl (if (map? (last fdecl))
-;                       (butlast fdecl)
-;                       fdecl)
-;               m (conj {:arglists (list 'quote (sigs fdecl))} m)
-;               m (let [inline (:inline m)
-;                       ifn (first inline)
-;                       iname (second inline)]
-;                   ;; same as: (if (and (= 'fn ifn) (not (symbol? iname))) ...)
-;                   (if (if (clojure.lang.Util/equiv 'fn ifn)
-;                         (if (instance? clojure.lang.Symbol iname) false true))
-;                     ;; inserts the same fn name to the inline fn if it does not have one
-;                     (assoc m :inline (cons ifn (cons (clojure.lang.Symbol/intern (.concat (.getName ^clojure.lang.Symbol name) "__inliner"))
-;                                                      (next inline))))
-;                     m))
-;               m (conj (if (meta name) (meta name) {}) m)]
-;           (list 'def (with-meta name m)
-;                 ;;todo - restore propagation of fn name
-;                 ;;must figure out how to convey primitive hints to self calls first
-;                 (cons `fn fdecl) ))))
-
-; (. (var defn) (setMacro))
+(.macro! (var defn))
 
 ; (defn to-array
 ;   "Returns an array of Objects containing the contents of coll, which

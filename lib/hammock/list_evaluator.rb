@@ -2,6 +2,7 @@ require 'hammock/symbol'
 module Hammock
   module ListEvaluator
     DOT = Symbol.intern(".")
+    NEW = Symbol.intern("new")
     extend self
 
     def namespace(env, sym)
@@ -16,7 +17,7 @@ module Hammock
       Meta === form && form.meta && form.meta[:macro]
     end
 
-    def expand_host(form)
+    def expand_method(form)
       method, target, *args = *form
       args = ConsCell.from_array(args)
       method = Symbol.intern(method.name[1..-1])
@@ -28,11 +29,28 @@ module Hammock
       ConsCell.from_array [DOT, target, args]
     end
 
+    def expand_new(form)
+      klass, *args = *form
+      args = ConsCell.from_array(args)
+      klass = Symbol.intern(klass.name[0..-2])
+      if args
+        args = args.cons(NEW)
+      else
+        args = NEW
+      end
+      ConsCell.from_array [DOT, klass, args]
+    end
+
     def macroexpand1(env, form)
       sym = form.car
-      if Hammock::Symbol === sym && sym.name.start_with?(DOT.name)
-        form = expand_host(form)
-        return form, false
+      if Hammock::Symbol === sym
+        if sym.name.start_with?(DOT.name)
+          form = expand_method(form)
+          return form, false
+        elsif sym.name.end_with?(DOT.name)
+          form = expand_new(form)
+          return form, false
+        end
       end
       item = find_var(env, sym)
       dreffed = item.deref
@@ -79,11 +97,26 @@ module Hammock
         fn = fn.deref
       end
 
-      if Function === fn
+      case fn
+      when Function
         args = (list.cdr || []).map { |elem| elem.evaluate(env) }
         fn.call list, env, *args
+      when ::Symbol
+        args = (list.cdr || []).map { |elem| elem.evaluate(env) }
+        if args.count > 2
+          raise ArgumentError, "more than one arg passed as argument to Keyword #{fn}"
+        end
+        map, default = *args
+        map.fetch(fn, default) if map
+      when Map, Vector
+        args = (list.cdr || []).map { |elem| elem.evaluate(env) }
+        if args.count > 2
+          raise ArgumentError, "more than one arg passed as argument to Map"
+        end
+        key, default = *args
+        fn.fetch(key, default)
       else
-        raise "What? #{fn}"
+        raise "What? #{fn}, #{fn.class}"
       end
     end
   end

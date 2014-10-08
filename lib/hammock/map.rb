@@ -22,6 +22,10 @@ module Hammock
     end
 
     def conj(pair)
+      return merge(pair) if Map === pair
+      unless pair.respond_to?(:to_a)
+        raise "You passed #{pair} as an argument to conj, but needs an Array-like arg"
+      end
       put *pair
     end
 
