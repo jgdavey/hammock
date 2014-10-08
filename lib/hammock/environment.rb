@@ -22,6 +22,10 @@ module Hammock
     end
     alias [] find
 
+    def key?(name)
+      @frame.key?(name)
+    end
+
     def inspect
       parts = []
       f = frame.each do |k,v|

@@ -23,7 +23,7 @@ module Hammock
     end
 
     def rebind(recur_locals)
-      bindings = Hammock::Map.from_array @names.to_a.zip(recur_locals.to_a).flatten
+      bindings = Hammock::Map.from_array @names.to_a.zip(recur_locals.to_a).flatten(1)
       self.class.new(@names, bindings)
     end
 

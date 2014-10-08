@@ -50,7 +50,7 @@ module Hammock
 
     def macroexpand(env, form)
       ret = true
-      spec = false
+      spec = nil
       while ret && !spec
         form, ret = macroexpand1(env, form)
         spec = special(form)

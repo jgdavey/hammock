@@ -18,5 +18,7 @@ module Hammock
       @meta = meta
       super()
     end
+
+    alias conj add
   end
 end

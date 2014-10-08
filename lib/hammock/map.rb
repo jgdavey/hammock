@@ -21,6 +21,10 @@ module Hammock
       super()
     end
 
+    def conj(pair)
+      put *pair
+    end
+
     alias assoc put
 
     def inspect

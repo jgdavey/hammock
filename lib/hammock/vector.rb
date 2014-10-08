@@ -20,7 +20,7 @@ module Hammock
       @meta = meta
     end
 
-    def assocN(idx, obj)
+    def assoc_n(idx, obj)
       if idx == count
         add(obj)
       else
@@ -28,7 +28,8 @@ module Hammock
       end
     end
 
-    alias assoc assocN
+    alias assoc assoc_n
+    alias conj add
 
     def call(n, missing=nil)
       if n >= count

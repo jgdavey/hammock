@@ -50,6 +50,11 @@ module Hammock
       @symtable[name]
     end
 
+    def has_var?(name)
+      name = self.class.name_only(name)
+      @symtable.key?(name)
+    end
+
     def find_var!(name)
       find_var(name) or raise "Unable to find #{name} within #@name"
     end

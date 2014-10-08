@@ -114,6 +114,39 @@ module Hammock
       sequence.cons(val)
     end
 
+    def self.conj(sequence, val)
+      sequence.conj(val)
+    end
+
+    def self.first(sequence)
+      if coll = seq(sequence)
+        coll.car
+      end
+    end
+
+    def self.next(sequence)
+      if coll = seq(sequence)
+        coll.cdr
+      end
+    end
+
+    def self.more(sequence)
+      if coll = seq(sequence)
+        coll.cdr || ConsCell.new(nil, nil)
+      end
+    end
+
+    def self.seq(sequence)
+      case sequence
+      when ConsCell
+        sequence
+      else
+        if sequence.respond_to?(:to_a)
+          ConsCell.from_array sequence.to_a
+        end
+      end
+    end
+
     class InNS
       def call(_, env, form)
         ns = Namespace.find_or_create(form.evaluate(env))
@@ -132,7 +165,7 @@ module Hammock
     end
 
     class If
-      def call(_, env, predicate, then_clause, else_clause)
+      def call(_, env, predicate, then_clause, else_clause=nil)
         if predicate.evaluate(env)
           then_clause.evaluate(env)
         else
@@ -176,12 +209,21 @@ module Hammock
           name = nil
         end
 
-        bindings, *body = args
-        unless Vector === bindings
-          raise "Function declarations must begin with a binding form"
+        bodies = args
+
+        if Vector === RT.first(bodies)
+          bodies = RT.list(bodies)
         end
 
-        Function.create(name, CURRENT_NS.deref, env, bindings, *body).tap do |fn|
+        arities = bodies.map do |body|
+          bindings, *body = *body
+          unless Vector === bindings
+            raise "Function declarations must begin with a binding form"
+          end
+          Function::Arity.new(bindings, *body)
+        end
+
+        Function.create(name, CURRENT_NS.deref, env, arities).tap do |fn|
           fn.meta = list.meta
         end
       end

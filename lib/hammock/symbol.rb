@@ -37,9 +37,9 @@ module Hammock
     end
 
     def evaluate(env)
-      return env[name] if env[name]
+      return env[name] if env.key?(name)
       namespace = env["__namespace__"] || context
-      if v = namespace.find_var(name)
+      if namespace.has_var?(name) && (v = namespace.find_var(name))
         v.deref
       elsif constant?
         Object.const_get(name)
