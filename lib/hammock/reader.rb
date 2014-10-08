@@ -68,10 +68,12 @@ module Hammock
     DISPATCH_MACROS = {
       ?{ => :read_set,
       ?" => :read_regex,
-      ?^ => :read_meta
+      ?^ => :read_meta,
+      ?' => :read_var
     }
 
     HEXCHARS = "0123456789ABCDEF".split("")
+    THE_VAR = Symbol.intern("var")
 
     def whitespace?(char)
       char == " " || char == "\n" || char == "\t" || char == ","
@@ -316,6 +318,10 @@ module Hammock
 
     def read_quoted(io, quote_mark)
       Hammock::Quote.new read(io)
+    end
+
+    def read_var(io, quote_mark)
+      Hammock::ConsCell.new THE_VAR, read(io)
     end
 
     def read_meta(io, hat)

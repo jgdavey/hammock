@@ -333,7 +333,11 @@ module Hammock
     class VarExpr
       def call(list, env, sym)
         namespace = env["__namespace__"] || sym.ns || CURRENT_NS.deref
-        namespace.has_var?(sym.name) && namespace.find_var(sym.name)
+        if namespace.has_var?(sym.name)
+          namespace.find_var(sym.name)
+        else
+          raise "Unable to find var #{sym} in namespace #{namespace.name}"
+        end
       end
     end
   end
