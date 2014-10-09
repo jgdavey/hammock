@@ -155,7 +155,7 @@ module Hammock
 
     def read_list(io, char)
       list = read_delimited_list(")", io)
-      ConsCell.from_array list
+      Sequence.from_array list
     end
 
     def read_vector(io, char)
@@ -448,7 +448,7 @@ module Hammock
     end
 
     def read_var(io, quote_mark)
-      Hammock::ConsCell.new THE_VAR, read(io)
+      Hammock::Sequence.new THE_VAR, read(io)
     end
 
     def read_function(io, paren)

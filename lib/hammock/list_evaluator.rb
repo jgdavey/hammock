@@ -19,19 +19,19 @@ module Hammock
 
     def expand_method(form)
       method, target, *args = *form
-      args = ConsCell.from_array(args)
+      args = Sequence.from_array(args)
       method = Symbol.intern(method.name[1..-1])
       if args
         args = args.cons(method)
       else
         args = method
       end
-      ConsCell.from_array [DOT, target, args]
+      Sequence.from_array [DOT, target, args]
     end
 
     def expand_new(form)
       klass, *args = *form
-      args = ConsCell.from_array(args)
+      args = Sequence.from_array(args)
       klass = Symbol.intern(klass.name[0..-2])
       if args
         args = args.cons(NEW)

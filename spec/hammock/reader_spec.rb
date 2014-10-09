@@ -14,7 +14,7 @@ describe Hammock::Reader do
 
   it "reads nested lists of numbers" do
     result = read_string "(1 (21 331))"
-    expect(result.to_a).to eq [1, Hammock::ConsCell.from_array([21, 331])]
+    expect(result.to_a).to eq [1, Hammock::Sequence.from_array([21, 331])]
   end
 
   it "reads bare numbers" do
@@ -64,7 +64,7 @@ describe Hammock::Reader do
 
   it "reads lists with strings and numbers" do
     result = read_string '(1.2 ("Foo" 3))'
-    expect(result.to_a).to eq [1.2, Hammock::ConsCell.from_array(["Foo", 3])]
+    expect(result.to_a).to eq [1.2, Hammock::Sequence.from_array(["Foo", 3])]
   end
 
   it "reads vectors" do
@@ -144,7 +144,7 @@ describe Hammock::Reader do
   it "reads symbols" do
     str = '(map foo)'
     result = read_string str
-    expect(result).to eq Hammock::ConsCell.from_array [
+    expect(result).to eq Hammock::Sequence.from_array [
       Hammock::Symbol.intern("map"),
       Hammock::Symbol.intern("foo")]
   end
@@ -172,7 +172,7 @@ describe Hammock::Reader do
   it "reads quoted lists" do
     str = "'(foo bar)"
     result = read_string str
-    expected = Hammock::Quote.new(Hammock::ConsCell.from_array [Hammock::Symbol.intern("foo"), Hammock::Symbol.intern("bar")])
+    expected = Hammock::Quote.new(Hammock::Sequence.from_array [Hammock::Symbol.intern("foo"), Hammock::Symbol.intern("bar")])
     expect(result).to eq expected
   end
 

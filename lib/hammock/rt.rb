@@ -6,7 +6,8 @@ require 'hammock/namespace'
 require 'hammock/environment'
 require 'hammock/loop_locals'
 require 'hammock/recur_locals'
-require 'hammock/cons_cell'
+require 'hammock/stream'
+require 'hammock/sequence'
 require 'hammock/var'
 require 'hammock/vector'
 require 'hammock/function'
@@ -37,7 +38,7 @@ module Hammock
     end
 
     def self.list(*args)
-      ConsCell.from_array(args)
+      Sequence.from_array(args)
     end
 
     def self.global_env
@@ -52,7 +53,7 @@ module Hammock
         "Set" => Hammock::Set,
         "Symbol" => Hammock::Symbol,
         "Keyword" => ::Symbol,
-        "ConsCell" => ConsCell,
+        "Sequence" => Sequence,
         "Meta" => Meta
       )
     end
@@ -126,7 +127,7 @@ module Hammock
       if s
         s.cons(val)
       else
-        ConsCell.new(val, nil)
+        Sequence.new(val, nil)
       end
     end
 
@@ -162,26 +163,26 @@ module Hammock
 
     def self.more(sequence)
       if coll = seq(sequence)
-        coll.cdr || EmptyList.new
+        coll.cdr || EmptyList
       else
-        EmptyList.new
+        EmptyList
       end
     end
 
     def self.seq(sequence)
-      return nil if sequence.nil? || EmptyList === sequence
+      return nil if sequence.nil? || sequence.empty?
       case sequence
-      when ConsCell
+      when Hammock::List
         sequence
       else
         if sequence.respond_to?(:to_a)
-          ConsCell.from_array sequence.to_a
+          Sequence.from_array sequence.to_a
         end
       end
     end
 
     def self.seq?(sequence)
-      ConsCell === sequence
+      Hammock::List === sequence
     end
 
     def self.count(sequence)
@@ -352,7 +353,7 @@ module Hammock
           *first, last = *args
           args = first + last.to_a
         end
-        ConsCell.from_array(args.map {|arg| arg.evaluate(env)})
+        Sequence.from_array(args.map {|arg| arg.evaluate(env)})
       end
     end
 
@@ -374,7 +375,7 @@ module Hammock
         method = args.first
         arguments = []
 
-        if ConsCell === args.first
+        if Sequence === args.first
           method, *arguments = *args.first
           arguments = arguments.map {|arg| arg.evaluate(env)}
         end

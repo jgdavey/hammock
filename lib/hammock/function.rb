@@ -115,7 +115,7 @@ module Hammock
         if variadic?
           lastarg = nil
           tail = args[max..-1]
-          lastarg = ConsCell.from_array(tail) if tail.any?
+          lastarg = Sequence.from_array(tail) if tail.any?
           env = env.bind @variadic_name, lastarg
         end
 
