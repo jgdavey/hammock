@@ -49,6 +49,8 @@ module Hammock
       "nil" => nil
     }
 
+    # SYMBOL_PATTERN = Regexp.new("^:?([^/0-9].*/)?(/|[^/0-9][^/]*)$")
+
     MACROS = {
       ?( => :read_list,
       ?) => :read_rparen,
@@ -82,6 +84,10 @@ module Hammock
 
     def macro?(char)
       MACROS.has_key? char
+    end
+
+    def terminating_macro?(char)
+      macro?(char) && char != ?# && char != ?' && char != ?%
     end
 
     def back(io)
@@ -352,7 +358,7 @@ module Hammock
       chars = initch.dup
       loop do
         char = io.getc
-        if !char || whitespace?(char) || macro?(char)
+        if !char || whitespace?(char) || terminating_macro?(char)
           back(io)
           break
         end

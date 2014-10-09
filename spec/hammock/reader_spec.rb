@@ -149,6 +149,14 @@ describe Hammock::Reader do
       Hammock::Symbol.intern("foo")]
   end
 
+  it "reads symbols with ticks too" do
+    str = "(map' foo)"
+    result = read_string str
+    expect(result).to eq Hammock::ConsCell.from_array [
+      Hammock::Symbol.intern("map'"),
+      Hammock::Symbol.intern("foo")]
+  end
+
   it "reads Ruby constants" do
     str = 'Object'
     result = read_string str
