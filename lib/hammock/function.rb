@@ -57,6 +57,10 @@ module Hammock
       "#{ns.name}/#@internal_name"
     end
 
+    def apply_to(sequence)
+      apply(*sequence.to_a)
+    end
+
     def apply(*args)
       arity = find_arity!(*args)
 

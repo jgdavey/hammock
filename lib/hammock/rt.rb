@@ -99,7 +99,7 @@ module Hammock
         "def"   => Def.new,
         "if"    => If.new,
         "let*"  => Let.new,
-        "do*"   => Do.new,
+        "do"    => Do.new,
         "fn*"   => Fn.new,
         "loop*" => Loop.new,
         "recur" => Recur.new,
@@ -121,7 +121,11 @@ module Hammock
     end
 
     def self.cons(val, sequence)
-      sequence.cons(val)
+      if sequence
+        seq(sequence).cons(val)
+      else
+        ConsCell.new(val, nil)
+      end
     end
 
     def self.conj(sequence, val)
@@ -177,6 +181,17 @@ module Hammock
       Vector::SubVector.new(vector.meta, vector, start_idx, end_idx)
     end
 
+    def self.make_keyword(*args)
+      return args.first if ::Symbol === args.first
+      if args.length == 1
+        *ns, name = args.first.to_s.split("/", 2)
+        parts = [ns.first, name].compact
+      else
+        parts = args[0..1]
+      end
+      parts.join("/").to_sym
+    end
+
     class InNS
       def call(_, env, form)
         ns = Namespace.find_or_create(form.evaluate(env))
@@ -185,7 +200,7 @@ module Hammock
     end
 
     class Def
-      def call(_, env, sym, val)
+      def call(_, env, sym, val=nil)
         ns = CURRENT_NS.deref
         ns.intern(sym).tap do |var|
           var.bind_root(val.evaluate(env))
@@ -282,7 +297,7 @@ module Hammock
         loop do
           env = env.merge(locals)
           ret = nil
-          b = body.to_a
+          b = body.to_a.dup
           until b.empty?
             ret = b.first.evaluate(env)
             b.shift
@@ -300,7 +315,11 @@ module Hammock
 
     class List
       def call(_, env, *args)
-        ConsCell.from_array(args)
+        if Vector === args.last
+          *first, last = *args
+          args = first + last.to_a
+        end
+        ConsCell.from_array(args.map {|arg| arg.evaluate(env)})
       end
     end
 

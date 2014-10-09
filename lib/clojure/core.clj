@@ -8,8 +8,8 @@
 
 (in-ns 'clojure.core)
 
-; (def unquote)
-; (def unquote-splicing)
+(def unquote)
+(def unquote-splicing)
 
 (def
   ^{:arglists '([x seq])
@@ -199,7 +199,7 @@
    :added "1.0"
    :static true}
  with-meta (fn ^:static with-meta [x m]
-             (. x (with-meta m))))
+             (. x (with_meta m))))
 
 (def ^{:private true :dynamic true}
   assert-valid-fdecl (fn [fdecl]))
@@ -305,61 +305,49 @@
 
 (.macro! (var defn))
 
-; (defn to-array
-;   "Returns an array of Objects containing the contents of coll, which
-;   can be any Collection.  Maps to java.util.Collection.toArray()."
-;   {:tag "[Ljava.lang.Object;"
-;    :added "1.0"
-;    :static true}
-;   [coll] (. clojure.lang.RT (toArray coll)))
+(defn to-array
+  "Calls to_a on any object that implements it."
+  {:added "1.0"
+   :static true}
+  [coll] (.to_a coll))
 
-; (defn cast
-;   "Throws a ClassCastException if x is not a c, else returns x."
-;   {:added "1.0"
-;    :static true}
-;   [^Class c x]
-;   (. c (cast x)))
+(defn vector
+  "Creates a new vector containing the args."
+  {:added "1.0"
+   :static true}
+  ([] [])
+  ([a] [a])
+  ([a b] [a b])
+  ([a b c] [a b c])
+  ([a b c d] [a b c d])
+  ([a b c d & args]
+    (. Vector (create (cons a (cons b (cons c (cons d args))))))))
 
-; (defn vector
-;   "Creates a new vector containing the args."
-;   {:added "1.0"
-;    :static true}
-;   ([] [])
-;   ([a] [a])
-;   ([a b] [a b])
-;   ([a b c] [a b c])
-;   ([a b c d] [a b c d])
-;   ([a b c d & args]
-;      (. clojure.lang.LazilyPersistentVector (create (cons a (cons b (cons c (cons d args))))))))
+(defn vec
+  "Converts a collection to an array"
+  {:added "1.0"
+   :static true}
+  ([coll]
+   (. Vector (create coll))))
 
-; (defn vec
-;   "Creates a new vector containing the contents of coll. Java arrays
-;   will be aliased and should not be modified."
-;   {:added "1.0"
-;    :static true}
-;   ([coll]
-;    (if (instance? java.util.Collection coll)
-;      (clojure.lang.LazilyPersistentVector/create coll)
-;      (. clojure.lang.LazilyPersistentVector (createOwning (to-array coll))))))
+(defn hash-map
+  "keyval => key val
+  Returns a new hash map with supplied mappings.  If any keys are
+  equal, they are handled as if by repeated uses of assoc."
+  {:added "1.0"
+   :static true}
+  ([] {})
+  ([& keyvals]
+   (. Map (create keyvals))))
 
-; (defn hash-map
-;   "keyval => key val
-;   Returns a new hash map with supplied mappings.  If any keys are
-;   equal, they are handled as if by repeated uses of assoc."
-;   {:added "1.0"
-;    :static true}
-;   ([] {})
-;   ([& keyvals]
-;    (. clojure.lang.PersistentHashMap (create keyvals))))
-
-; (defn hash-set
-;   "Returns a new hash set with supplied keys.  Any equal keys are
-;   handled as if by repeated uses of conj."
-;   {:added "1.0"
-;    :static true}
-;   ([] #{})
-;   ([& keys]
-;    (clojure.lang.PersistentHashSet/create keys)))
+(defn hash-set
+  "Returns a new hash set with supplied keys.  Any equal keys are
+  handled as if by repeated uses of conj."
+  {:added "1.0"
+   :static true}
+  ([] #{})
+  ([& keys]
+   (. Set (create keys))))
 
 ; (defn sorted-map
 ;   "keyval => key val
@@ -399,172 +387,165 @@
 
 
 ; ;;;;;;;;;;;;;;;;;;;;
-; (defn nil?
-;   "Returns true if x is nil, false otherwise."
-;   {:added "1.0"
-;    :static true }
-;   [x] (.nil? x))
+(defn nil?
+  "Returns true if x is nil, false otherwise."
+  {:added "1.0"
+   :static true }
+  [x] (.nil? x))
 
-; (def
+(def
 
-;  ^{:doc "Like defn, but the resulting function name is declared as a
-;   macro and will be used as a macro by the compiler when it is
-;   called."
-;    :arglists '([name doc-string? attr-map? [params*] body]
-;                  [name doc-string? attr-map? ([params*] body)+ attr-map?])
-;    :added "1.0"}
-;  defmacro (fn [&form &env
-;                 name & args]
-;              (let [prefix (loop [p (list name) args args]
-;                             (let [f (first args)]
-;                               (if (string? f)
-;                                 (recur (cons f p) (next args))
-;                                 (if (map? f)
-;                                   (recur (cons f p) (next args))
-;                                   p))))
-;                    fdecl (loop [fd args]
-;                            (if (string? (first fd))
-;                              (recur (next fd))
-;                              (if (map? (first fd))
-;                                (recur (next fd))
-;                                fd)))
-;                    fdecl (if (vector? (first fdecl))
-;                            (list fdecl)
-;                            fdecl)
-;                    add-implicit-args (fn [fd]
-;                              (let [args (first fd)]
-;                                (cons (vec (cons '&form (cons '&env args))) (next fd))))
-;                    add-args (fn [acc ds]
-;                               (if (nil? ds)
-;                                 acc
-;                                 (let [d (first ds)]
-;                                   (if (map? d)
-;                                     (conj acc d)
-;                                     (recur (conj acc (add-implicit-args d)) (next ds))))))
-;                    fdecl (seq (add-args [] fdecl))
-;                    decl (loop [p prefix d fdecl]
-;                           (if p
-;                             (recur (next p) (cons (first p) d))
-;                             d))]
-;                (list 'do
-;                      (cons `defn decl)
-;                      (list '. (list 'var name) '(setMacro))
-;                      (list 'var name)))))
-
-
-; (. (var defmacro) (setMacro))
-
-; (defmacro when
-;   "Evaluates test. If logical true, evaluates body in an implicit do."
-;   {:added "1.0"}
-;   [test & body]
-;   (list 'if test (cons 'do body)))
-
-; (defmacro when-not
-;   "Evaluates test. If logical false, evaluates body in an implicit do."
-;   {:added "1.0"}
-;   [test & body]
-;     (list 'if test nil (cons 'do body)))
-
-; (defn false?
-;   "Returns true if x is the value false, false otherwise."
-;   {:tag Boolean,
-;    :added "1.0"
-;    :static true}
-;   [x] (clojure.lang.Util/identical x false))
-
-; (defn true?
-;   "Returns true if x is the value true, false otherwise."
-;   {:tag Boolean,
-;    :added "1.0"
-;    :static true}
-;   [x] (clojure.lang.Util/identical x true))
-
-; (defn not
-;   "Returns true if x is logical false, false otherwise."
-;   {:added "1.0"
-;    :static true}
-;   [x] (if x false true))
-
-; (defn some?
-;   "Returns true if x is not nil, false otherwise."
-;   {:tag Boolean
-;    :added "1.6"
-;    :static true}
-;   [x] (not (nil? x)))
-
-; (defn str
-;   "With no args, returns the empty string. With one arg x, returns
-;   x.toString().  (str nil) returns the empty string. With more than
-;   one arg, returns the concatenation of the str values of the args."
-;   {:tag String
-;    :added "1.0"
-;    :static true}
-;   (^String [] "")
-;   (^String [^Object x]
-;    (if (nil? x) "" (. x (toString))))
-;   (^String [x & ys]
-;      ((fn [^StringBuilder sb more]
-;           (if more
-;             (recur (. sb  (append (str (first more)))) (next more))
-;             (str sb)))
-;       (new StringBuilder (str x)) ys)))
+ ^{:doc "Like defn, but the resulting function name is declared as a
+  macro and will be used as a macro by the compiler when it is
+  called."
+   :arglists '([name doc-string? attr-map? [params*] body]
+               [name doc-string? attr-map? ([params*] body)+ attr-map?])
+   :added "1.0"}
+ defmacro (fn [&form &env
+                name & args]
+             (let [prefix (loop [p (list name) args args]
+                            (let [f (first args)]
+                              (if (string? f)
+                                (recur (cons f p) (next args))
+                                (if (map? f)
+                                  (recur (cons f p) (next args))
+                                  p))))
+                   fdecl (loop [fd args]
+                           (if (string? (first fd))
+                             (recur (next fd))
+                             (if (map? (first fd))
+                                (recur (next fd))
+                                fd)))
+                   fdecl (if (vector? (first fdecl))
+                           (list fdecl)
+                           fdecl)
+                   add-implicit-args (fn [fd]
+                             (let [args (first fd)]
+                               (cons (vec (cons '&form (cons '&env args))) (next fd))))
+                   add-args (fn [acc ds]
+                              (if (nil? ds)
+                                acc
+                                (let [d (first ds)]
+                                  (if (map? d)
+                                    (conj acc d)
+                                    (recur (conj acc (add-implicit-args d)) (next ds))))))
+                   fdecl (seq (add-args [] fdecl))
+                   decl (loop [p prefix d fdecl]
+                          (if p
+                            (recur (next p) (cons (first p) d))
+                            d))]
+               (list 'do
+                     (cons `defn decl)
+                     (list '. (list 'var name) 'macro!)
+                     (list 'var name)))))
 
 
-; (defn symbol?
-;   "Return true if x is a Symbol"
-;   {:added "1.0"
-;    :static true}
-;   [x] (instance? clojure.lang.Symbol x))
+(.macro! (var defmacro))
 
-; (defn keyword?
-;   "Return true if x is a Keyword"
-;   {:added "1.0"
-;    :static true}
-;   [x] (instance? clojure.lang.Keyword x))
+(defmacro when
+  "Evaluates test. If logical true, evaluates body in an implicit do."
+  {:added "1.0"}
+  [test & body]
+  (list 'if test (cons 'do body)))
 
-; (defn symbol
-;   "Returns a Symbol with the given namespace and name."
-;   {:tag clojure.lang.Symbol
-;    :added "1.0"
-;    :static true}
-;   ([name] (if (symbol? name) name (clojure.lang.Symbol/intern name)))
-;   ([ns name] (clojure.lang.Symbol/intern ns name)))
+(defmacro when-not
+  "Evaluates test. If logical false, evaluates body in an implicit do."
+  {:added "1.0"}
+  [test & body]
+    (list 'if test nil (cons 'do body)))
 
-; (defn gensym
-;   "Returns a new symbol with a unique name. If a prefix string is
-;   supplied, the name is prefix# where # is some unique number. If
-;   prefix is not supplied, the prefix is 'G__'."
-;   {:added "1.0"
-;    :static true}
-;   ([] (gensym "G__"))
-;   ([prefix-string] (. clojure.lang.Symbol (intern (str prefix-string (str (. clojure.lang.RT (nextID))))))))
+(defn false?
+  "Returns true if x is the value false, false otherwise."
+  {:tag Boolean,
+   :added "1.0"
+   :static true}
+  [x] (.false? x))
 
-; (defmacro cond
-;   "Takes a set of test/expr pairs. It evaluates each test one at a
-;   time.  If a test returns logical true, cond evaluates and returns
-;   the value of the corresponding expr and doesn't evaluate any of the
-;   other tests or exprs. (cond) returns nil."
-;   {:added "1.0"}
-;   [& clauses]
-;     (when clauses
-;       (list 'if (first clauses)
-;             (if (next clauses)
-;                 (second clauses)
-;                 (throw (IllegalArgumentException.
-;                          "cond requires an even number of forms")))
-;             (cons 'clojure.core/cond (next (next clauses))))))
+(defn true?
+  "Returns true if x is the value true, false otherwise."
+  {:added "1.0"
+   :static true}
+  [x] (.true? x))
 
-; (defn keyword
-;   "Returns a Keyword with the given namespace and name.  Do not use :
-;   in the keyword strings, it will be added automatically."
-;   {:tag clojure.lang.Keyword
-;    :added "1.0"
-;    :static true}
-;   ([name] (cond (keyword? name) name
-;                 (symbol? name) (clojure.lang.Keyword/intern ^clojure.lang.Symbol name)
-;                 (string? name) (clojure.lang.Keyword/intern ^String name)))
-;   ([ns name] (clojure.lang.Keyword/intern ns name)))
+(defn not
+  "Returns true if x is logical false, false otherwise."
+  {:added "1.0"
+   :static true}
+  [x] (if x false true))
+
+(defn some?
+  "Returns true if x is not nil, false otherwise."
+  {:added "1.6"
+   :static true}
+  [x] (not (nil? x)))
+
+(defn str
+  "With no args, returns the empty string. With one arg x, returns
+  x.toString().  (str nil) returns the empty string. With more than
+  one arg, returns the concatenation of the str values of the args."
+  {:added "1.0"
+   :static true}
+  ([] "")
+  ([x]
+   (if (nil? x) "" (.to_s x)))
+  ([x & ys]
+     ((fn [sb more]
+          (if more
+            (recur (.+ sb (str (first more))) (next more))
+            sb))
+      (str x) ys)))
+
+
+(defn symbol?
+  "Return true if x is a Symbol"
+  {:added "1.0"
+   :static true}
+  [x] (instance? Symbol x))
+
+(defn keyword?
+  "Return true if x is a Keyword"
+  {:added "1.0"
+   :static true}
+  [x] (instance? Keyword x))
+
+(defn symbol
+  "Returns a Symbol with the given namespace and name."
+  {:added "1.0"
+   :static true}
+  ([name] (if (symbol? name) name (.intern Symbol name)))
+  ([ns name] (.intern Symbol ns name)))
+
+(defn gensym
+  "Returns a new symbol with a unique name. If a prefix string is
+  supplied, the name is prefix# where # is some unique number. If
+  prefix is not supplied, the prefix is 'G__'."
+  {:added "1.0"
+   :static true}
+  ([] (gensym "G__"))
+  ([prefix-string] (. Symbol (intern (str prefix-string (str (. RT next_id)))))))
+
+(defmacro cond
+  "Takes a set of test/expr pairs. It evaluates each test one at a
+  time.  If a test returns logical true, cond evaluates and returns
+  the value of the corresponding expr and doesn't evaluate any of the
+  other tests or exprs. (cond) returns nil."
+  {:added "1.0"}
+  [& clauses]
+    (when clauses
+      (list 'if (first clauses)
+            (if (next clauses)
+                (second clauses)
+                (throw (ArgumentError. "cond requires an even number of forms")))
+            (cons 'clojure.core/cond (next (next clauses))))))
+
+(defn keyword
+  "Returns a Keyword with the given namespace and name.  Do not use :
+  in the keyword strings, it will be added automatically."
+  {:tag clojure.lang.Keyword
+   :added "1.0"
+   :static true}
+  ([name] (.make_keyword RT name))
+  ([ns name] (.make_keyword RT ns name)))
 
 ; (defn find-keyword
 ;   "Returns a Keyword with the given namespace and name if one already
@@ -580,49 +561,49 @@
 ;   ([ns name] (clojure.lang.Keyword/find ns name)))
 
 
-; (defn spread
-;   {:private true
-;    :static true}
-;   [arglist]
-;   (cond
-;    (nil? arglist) nil
-;    (nil? (next arglist)) (seq (first arglist))
-;    :else (cons (first arglist) (spread (next arglist)))))
+(defn spread
+  {:private true
+   :static true}
+  [arglist]
+  (cond
+   (nil? arglist) nil
+   (nil? (next arglist)) (seq (first arglist))
+   :else (cons (first arglist) (spread (next arglist)))))
 
-; (defn list*
-;   "Creates a new list containing the items prepended to the rest, the
-;   last of which will be treated as a sequence."
-;   {:added "1.0"
-;    :static true}
-;   ([args] (seq args))
-;   ([a args] (cons a args))
-;   ([a b args] (cons a (cons b args)))
-;   ([a b c args] (cons a (cons b (cons c args))))
-;   ([a b c d & more]
-;      (cons a (cons b (cons c (cons d (spread more)))))))
+(defn list*
+  "Creates a new list containing the items prepended to the rest, the
+  last of which will be treated as a sequence."
+  {:added "1.0"
+   :static true}
+  ([args] (seq args))
+  ([a args] (cons a args))
+  ([a b args] (cons a (cons b args)))
+  ([a b c args] (cons a (cons b (cons c args))))
+  ([a b c d & more]
+     (cons a (cons b (cons c (cons d (spread more)))))))
 
-; (defn apply
-;   "Applies fn f to the argument list formed by prepending intervening arguments to args."
-;   {:added "1.0"
-;    :static true}
-;   ([^clojure.lang.IFn f args]
-;      (. f (applyTo (seq args))))
-;   ([^clojure.lang.IFn f x args]
-;      (. f (applyTo (list* x args))))
-;   ([^clojure.lang.IFn f x y args]
-;      (. f (applyTo (list* x y args))))
-;   ([^clojure.lang.IFn f x y z args]
-;      (. f (applyTo (list* x y z args))))
-;   ([^clojure.lang.IFn f a b c d & args]
-;      (. f (applyTo (cons a (cons b (cons c (cons d (spread args)))))))))
+(defn apply
+  "Applies fn f to the argument list formed by prepending intervening arguments to args."
+  {:added "1.0"
+   :static true}
+  ([f args]
+     (. f (apply_to (seq args))))
+  ([f x args]
+     (. f (apply_to (list* x args))))
+  ([f x y args]
+     (. f (apply_to (list* x y args))))
+  ([f x y z args]
+     (. f (apply_to (list* x y z args))))
+  ([f a b c d & args]
+     (. f (apply_to (cons a (cons b (cons c (cons d (spread args)))))))))
 
-; (defn vary-meta
-;  "Returns an object of the same type and value as obj, with
-;   (apply f (meta obj) args) as its metadata."
-;  {:added "1.0"
-;    :static true}
-;  [obj f & args]
-;   (with-meta obj (apply f (meta obj) args)))
+(defn vary-meta
+ "Returns an object of the same type and value as obj, with
+  (apply f (meta obj) args) as its metadata."
+ {:added "1.0"
+   :static true}
+ [obj f & args]
+  (with-meta obj (apply f (meta obj) args)))
 
 ; (defmacro lazy-seq
 ;   "Takes a body of expressions that returns an ISeq or nil, and yields
@@ -808,27 +789,23 @@
 ;          (if or# or# (or ~@next)))))
 
 ; ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
-; (defn zero?
-;   "Returns true if num is zero, else false"
-;   {
-;    :inline (fn [x] `(. clojure.lang.Numbers (isZero ~x)))
-;    :added "1.0"}
-;   [x] (. clojure.lang.Numbers (isZero x)))
+(defn zero?
+  "Returns true if num is zero, else false"
+  {:added "1.0"}
+  [x] (if (number? x)
+         (.zero? x)
+         false))
 
-; (defn count
-;   "Returns the number of items in the collection. (count nil) returns
-;   0.  Also works on strings, arrays, and Java Collections and Maps"
-;   {
-;    :inline (fn  [x] `(. clojure.lang.RT (count ~x)))
-;    :added "1.0"}
-;   [coll] (clojure.lang.RT/count coll))
+(defn count
+  "Returns the number of items in the collection. (count nil) returns
+  0.  Also works on strings, arrays, and Java Collections and Maps"
+  {:added "1.0"}
+  [coll] (. RT (count coll)))
 
-; (defn int
-;   "Coerce to int"
-;   {
-;    :inline (fn  [x] `(. clojure.lang.RT (~(if *unchecked-math* 'uncheckedIntCast 'intCast) ~x)))
-;    :added "1.0"}
-;   [x] (. clojure.lang.RT (intCast x)))
+(defn int
+  "Coerce to int"
+  {:added "1.0"}
+  [x] (. x to_i))
 
 ; (defn nth
 ;   "Returns the value at the index. get returns nil if index out of
@@ -863,12 +840,11 @@
 ;    :added "1.0"}
 ;   [x] (. clojure.lang.Numbers (incP x)))
 
-; (defn inc
-;   "Returns a number one greater than num. Does not auto-promote
-;   longs, will throw on overflow. See also: inc'"
-;   {:inline (fn [x] `(. clojure.lang.Numbers (~(if *unchecked-math* 'unchecked_inc 'inc) ~x)))
-;    :added "1.2"}
-;   [x] (. clojure.lang.Numbers (inc x)))
+(defn inc
+  "Returns a number one greater than num. Does not auto-promote
+  longs, will throw on overflow. See also: inc'"
+  {:added "1.2"}
+  [x] (. x (+ 1)))
 
 ; ;; reduce is defined again later after InternalReduce loads
 ; (defn ^:private ^:static
@@ -887,6 +863,21 @@
 ;                        (chunk-next s))
 ;                 (recur f (f val (first s)) (next s)))
 ;          val))))
+
+
+;; TODO: Implement chunked-cons version
+(defn ^:private ^:static
+   reduce1
+   ([f coll]
+    (let [s (seq coll)]
+       (if s
+          (reduce1 f (first s) (next s))
+          (f))))
+   ([f val coll]
+    (let [s (seq coll)]
+       (if s
+          (recur f (f val (first s)) (next s))
+          val))))
 
 ; (defn reverse
 ;   "Returns a seq of the items in coll in reverse order. Not lazy."
@@ -1315,58 +1306,53 @@
 ;    :added "1.6"}
 ;   [x n] (. clojure.lang.Numbers unsignedShiftRight x n))
 
-; (defn integer?
-;   "Returns true if n is an integer"
-;   {:added "1.0"
-;    :static true}
-;   [n]
-;   (or (instance? Integer n)
-;       (instance? Long n)
-;       (instance? clojure.lang.BigInt n)
-;       (instance? BigInteger n)
-;       (instance? Short n)
-;       (instance? Byte n)))
+(defn integer?
+  "Returns true if n is an integer"
+  {:added "1.0"
+   :static true}
+  [n]
+  (instance? Integer n))
 
-; (defn even?
-;   "Returns true if n is even, throws an exception if n is not an integer"
-;   {:added "1.0"
-;    :static true}
-;    [n] (if (integer? n)
-;         (zero? (bit-and (clojure.lang.RT/uncheckedLongCast n) 1))
-;         (throw (IllegalArgumentException. (str "Argument must be an integer: " n)))))
+(defn even?
+  "Returns true if n is even, throws an exception if n is not an integer"
+  {:added "1.0"
+   :static true}
+   [n] (if (integer? n)
+        (. n even?)
+        (throw (ArgumentError. (str "Argument must be an integer: " n)))))
 
-; (defn odd?
-;   "Returns true if n is odd, throws an exception if n is not an integer"
-;   {:added "1.0"
-;    :static true}
-;   [n] (not (even? n)))
+(defn odd?
+  "Returns true if n is odd, throws an exception if n is not an integer"
+  {:added "1.0"
+   :static true}
+  [n] (not (even? n)))
 
 
 ; ;;
 
-; (defn complement
-;   "Takes a fn f and returns a fn that takes the same arguments as f,
-;   has the same effects, if any, and returns the opposite truth value."
-;   {:added "1.0"
-;    :static true}
-;   [f]
-;   (fn
-;     ([] (not (f)))
-;     ([x] (not (f x)))
-;     ([x y] (not (f x y)))
-;     ([x y & zs] (not (apply f x y zs)))))
+(defn complement
+  "Takes a fn f and returns a fn that takes the same arguments as f,
+  has the same effects, if any, and returns the opposite truth value."
+  {:added "1.0"
+   :static true}
+  [f]
+  (fn
+    ([] (not (f)))
+    ([x] (not (f x)))
+    ([x y] (not (f x y)))
+    ([x y & zs] (not (apply f x y zs)))))
 
-; (defn constantly
-;   "Returns a function that takes any number of arguments and returns x."
-;   {:added "1.0"
-;    :static true}
-;   [x] (fn [& args] x))
+(defn constantly
+  "Returns a function that takes any number of arguments and returns x."
+  {:added "1.0"
+   :static true}
+  [x] (fn [& args] x))
 
-; (defn identity
-;   "Returns its argument."
-;   {:added "1.0"
-;    :static true}
-;   [x] x)
+(defn identity
+  "Returns its argument."
+  {:added "1.0"
+   :static true}
+  [x] x)
 
 ; ;;Collection stuff
 
@@ -3396,12 +3382,12 @@
 ;   [^Number x] (clojure.lang.RT/uncheckedDoubleCast x))
 
 
-; (defn number?
-;   "Returns true if x is a Number"
-;   {:added "1.0"
-;    :static true}
-;   [x]
-;   (instance? Number x))
+(defn number?
+  "Returns true if x is a Number"
+  {:added "1.0"
+   :static true}
+  [x]
+  (instance? Numeric x))
 
 ; (defn mod
 ;   "Modulus of num and div. Truncates toward negative infinity."

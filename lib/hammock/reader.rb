@@ -61,6 +61,7 @@ module Hammock
       ?; => :read_comment,
       ?# => :read_dispatched,
       ?' => :read_quoted,
+      ?` => :read_syntax_quoted,
       ?^ => :read_meta,
     "\\" => :read_char
     }
@@ -317,6 +318,11 @@ module Hammock
     end
 
     def read_quoted(io, quote_mark)
+      Hammock::Quote.new read(io)
+    end
+
+    def read_syntax_quoted(io, quote_mark)
+      # TODO handle lists, unquotes, splicing
       Hammock::Quote.new read(io)
     end
 

@@ -8,6 +8,14 @@ module Hammock
       map.send(:transform) { @meta = meta }
     end
 
+    def self.create(coll)
+      if Map === coll
+        coll
+      else
+        from_array(coll.to_a)
+      end
+    end
+
     def self.from_array(array)
       map = new
       array.each_slice(2) do |pair|

@@ -10,6 +10,14 @@ module Hammock
       end
     end
 
+    def self.create(coll)
+      if self === coll
+        coll
+      else
+        from_array(coll.to_a)
+      end
+    end
+
     def self.from_array(items)
       items.reduce(new) { |set, item| set.add(item) }
     end

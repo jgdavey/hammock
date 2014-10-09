@@ -10,7 +10,7 @@ module Hammock
     end
 
     def find_var(env, sym)
-      namespace(env, sym).find_var!(sym)
+      namespace(env, sym).find_var(sym)
     end
 
     def macro?(form)
@@ -42,6 +42,7 @@ module Hammock
     end
 
     def macroexpand1(env, form)
+      return form, false unless form
       sym = form.car
       if Hammock::Symbol === sym
         if sym.name.start_with?(DOT.name)
@@ -52,17 +53,21 @@ module Hammock
           return form, false
         end
       end
-      item = find_var(env, sym)
-      dreffed = item.deref
-      if macro?(item) || macro?(dreffed)
-        form = dreffed.call(dreffed, nil, form, env, *form.cdr)
-        return form, true
+      if item = find_var(env, sym)
+        dreffed = item.deref
+        if macro?(item) || macro?(dreffed)
+          form = dreffed.call(dreffed, nil, form, env, *form.cdr)
+          return form, true
+        else
+          return form, false
+        end
       else
         return form, false
       end
     end
 
     def special(form)
+      return unless form
       RT.special(form.car)
     end
 
@@ -71,7 +76,7 @@ module Hammock
       spec = nil
       while ret && !spec
         form, ret = macroexpand1(env, form)
-        spec = special(form)
+        spec = special(form) if form
       end
       form
     end
@@ -84,6 +89,8 @@ module Hammock
       if Hammock::Symbol === list.car
         list = macroexpand(env, list)
       end
+
+      return unless list
 
       if s = special(list)
         return s.call(list, env, *list.cdr)

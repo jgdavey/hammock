@@ -12,6 +12,14 @@ module Hammock
       vec.send(:transform) { @meta = meta }
     end
 
+    def self.create(coll)
+      if Vector === coll
+        coll
+      else
+        from_array(coll.to_a)
+      end
+    end
+
     def self.from_array(items)
       items.reduce(EmptyVector) { |vector, item| vector.add(item) }
     end
@@ -32,12 +40,21 @@ module Hammock
     alias assoc assoc_n
     alias conj add
 
+    def map(&block)
+      return self unless block_given?
+      reduce(self.class.new) { |vector, item| vector.add(yield(item)) }
+    end
+
     def call(n, missing=nil)
       if n >= count
         missing
       else
         get(n)
       end
+    end
+
+    def evaluate(env)
+      map { |e| e.evaluate(env) }
     end
 
     def inspect
@@ -94,6 +111,7 @@ module Hammock
           self.class.new v.assoc_n(@start_idx + i, obj), @start_idx, @end_idx
         end
       end
+
       def inspect
         "[#{to_a.map(&:inspect).join(' ')}]"
       end
