@@ -173,12 +173,30 @@ module Hammock
       sequence.count
     end
 
+    def self.nth(sequence, *args)
+      case sequence
+      when String
+        key = args.first
+        sequence[key,1] if key < sequence
+      else
+        sequence.fetch(*args)
+      end
+    end
+
     def self.equal(a, b)
       a == b
     end
 
     def self.subvec(vector, start_idx, end_idx)
       Vector::SubVector.new(vector.meta, vector, start_idx, end_idx)
+    end
+
+    def self.divide(num1, num2)
+      if (num1 % num2).zero?
+        num1 / num2
+      else
+        num1.quo(num2)
+      end
     end
 
     def self.make_keyword(*args)

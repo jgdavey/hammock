@@ -196,7 +196,7 @@ module Hammock
 
       loop do
         char = io.getc
-        if whitespace?(char) || macro?(char) || !char
+        if whitespace?(char) || terminating_macro?(char) || !char
           back(io)
           break
         end
@@ -320,6 +320,8 @@ module Hammock
         digits.to_i
       when /^\d+\.\d+$/
         digits.to_f
+      when /^\d+\/\d+$/
+        digits.to_r
       end
     end
 

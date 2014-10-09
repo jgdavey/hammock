@@ -4,6 +4,7 @@ require 'delegate'
 module Hammock
   class Vector < Hamster::Vector
     include Meta
+    NoMissing = Object.new
 
     alias empty clear
     alias val_at get
@@ -45,9 +46,13 @@ module Hammock
       reduce(self.class.new) { |vector, item| vector.add(yield(item)) }
     end
 
-    def call(n, missing=nil)
+    def fetch(n, missing=NoMissing)
       if n >= count
-        missing
+        if missing == NoMissing
+          raise IndexError
+        else
+          missing
+        end
       else
         get(n)
       end

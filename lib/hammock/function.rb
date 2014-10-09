@@ -49,8 +49,7 @@ module Hammock
       else
         counts = c[0..-2].join(", ") + " or #{c.last}"
       end
-      "Wrong number of args passed to #{name}. " \
-      "Expected #{counts}; Got #{needed}"
+      "Wrong number of args passed to #{name}. Expected #{counts}; Got #{needed}"
     end
 
     def name

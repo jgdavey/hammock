@@ -807,16 +807,14 @@
   {:added "1.0"}
   [x] (. x to_i))
 
-; (defn nth
-;   "Returns the value at the index. get returns nil if index out of
-;   bounds, nth throws an exception unless not-found is supplied.  nth
-;   also works for strings, Java arrays, regex Matchers and Lists, and,
-;   in O(n) time, for sequences."
-;   {:inline (fn  [c i & nf] `(. clojure.lang.RT (nth ~c ~i ~@nf)))
-;    :inline-arities #{2 3}
-;    :added "1.0"}
-;   ([coll index] (. clojure.lang.RT (nth coll index)))
-;   ([coll index not-found] (. clojure.lang.RT (nth coll index not-found))))
+(defn nth
+  "Returns the value at the index. get returns nil if index out of
+  bounds, nth throws an exception unless not-found is supplied. nth
+  also works for strings, Ruby Arrays, and Lists, and, in O(n) time,
+  for sequences."
+  {:added "1.0"}
+  ([coll index] (. RT (nth coll index)))
+  ([coll index not-found] (. RT (nth coll index not-found))))
 
 ; (defn <
 ;   "Returns non-nil if nums are in monotonically increasing order,
@@ -833,18 +831,11 @@
 ;        (< y (first more)))
 ;      false)))
 
-; (defn inc'
-;   "Returns a number one greater than num. Supports arbitrary precision.
-;   See also: inc"
-;   {:inline (fn [x] `(. clojure.lang.Numbers (incP ~x)))
-;    :added "1.0"}
-;   [x] (. clojure.lang.Numbers (incP x)))
-
 (defn inc
   "Returns a number one greater than num. Does not auto-promote
   longs, will throw on overflow. See also: inc'"
   {:added "1.2"}
-  [x] (. x (+ 1)))
+  [x] (. x succ))
 
 ; ;; reduce is defined again later after InternalReduce loads
 ; (defn ^:private ^:static
@@ -904,88 +895,47 @@
 ; (defn ^:private >1? [n] (clojure.lang.Numbers/gt n 1))
 ; (defn ^:private >0? [n] (clojure.lang.Numbers/gt n 0))
 
-; (defn +'
-;   "Returns the sum of nums. (+) returns 0. Supports arbitrary precision.
-;   See also: +"
-;   {:inline (nary-inline 'addP)
-;    :inline-arities >1?
-;    :added "1.0"}
-;   ([] 0)
-;   ([x] (cast Number x))
-;   ([x y] (. clojure.lang.Numbers (addP x y)))
-;   ([x y & more]
-;    (reduce1 +' (+' x y) more)))
+(defn +
+  "Returns the sum of nums. (+) returns 0."
+  {:added "1.2"}
+  ([] 0)
+  ([x] (.+ 0 x))
+  ([x y] (.+ x y))
+  ([x y & more]
+     (reduce1 + (+ x y) more)))
 
-; (defn +
-;   "Returns the sum of nums. (+) returns 0. Does not auto-promote
-;   longs, will throw on overflow. See also: +'"
-;   {:inline (nary-inline 'add 'unchecked_add)
-;    :inline-arities >1?
-;    :added "1.2"}
-;   ([] 0)
-;   ([x] (cast Number x))
-;   ([x y] (. clojure.lang.Numbers (add x y)))
-;   ([x y & more]
-;      (reduce1 + (+ x y) more)))
+(def +' +)
 
-; (defn *'
-;   "Returns the product of nums. (*) returns 1. Supports arbitrary precision.
-;   See also: *"
-;   {:inline (nary-inline 'multiplyP)
-;    :inline-arities >1?
-;    :added "1.0"}
-;   ([] 1)
-;   ([x] (cast Number x))
-;   ([x y] (. clojure.lang.Numbers (multiplyP x y)))
-;   ([x y & more]
-;    (reduce1 *' (*' x y) more)))
+(defn *
+  "Returns the product of nums. (*) returns 1."
+  {:added "1.0"}
+  ([] 1)
+  ([x] (.* 1 x))
+  ([x y] (.* x y))
+  ([x y & more]
+   (reduce1 * (* x y) more)))
 
-; (defn *
-;   "Returns the product of nums. (*) returns 1. Does not auto-promote
-;   longs, will throw on overflow. See also: *'"
-;   {:inline (nary-inline 'multiply 'unchecked_multiply)
-;    :inline-arities >1?
-;    :added "1.2"}
-;   ([] 1)
-;   ([x] (cast Number x))
-;   ([x y] (. clojure.lang.Numbers (multiply x y)))
-;   ([x y & more]
-;      (reduce1 * (* x y) more)))
+(def *' *)
 
-; (defn /
-;   "If no denominators are supplied, returns 1/numerator,
-;   else returns numerator divided by all of the denominators."
-;   {:inline (nary-inline 'divide)
-;    :inline-arities >1?
-;    :added "1.0"}
-;   ([x] (/ 1 x))
-;   ([x y] (. clojure.lang.Numbers (divide x y)))
-;   ([x y & more]
-;    (reduce1 / (/ x y) more)))
+(defn /
+  "If no denominators are supplied, returns 1/numerator,
+  else returns numerator divided by all of the denominators."
+  {:added "1.0"}
+  ([x] (/ 1 x))
+  ([x y] (. RT (divide x y)))
+  ([x y & more]
+   (reduce1 / (/ x y) more)))
 
-; (defn -'
-;   "If no ys are supplied, returns the negation of x, else subtracts
-;   the ys from x and returns the result. Supports arbitrary precision.
-;   See also: -"
-;   {:inline (nary-inline 'minusP)
-;    :inline-arities >0?
-;    :added "1.0"}
-;   ([x] (. clojure.lang.Numbers (minusP x)))
-;   ([x y] (. clojure.lang.Numbers (minusP x y)))
-;   ([x y & more]
-;    (reduce1 -' (-' x y) more)))
+(defn -
+  "If no ys are supplied, returns the negation of x, else subtracts
+  the ys from x and returns the result."
+  {:added "1.0"}
+  ([x] (. 0 (- x)))
+  ([x y] (.- x y))
+  ([x y & more]
+   (reduce1 - (- x y) more)))
 
-; (defn -
-;   "If no ys are supplied, returns the negation of x, else subtracts
-;   the ys from x and returns the result. Does not auto-promote
-;   longs, will throw on overflow. See also: -'"
-;   {:inline (nary-inline 'minus 'unchecked_minus)
-;    :inline-arities >0?
-;    :added "1.2"}
-;   ([x] (. clojure.lang.Numbers (minus x)))
-;   ([x y] (. clojure.lang.Numbers (minus x y)))
-;   ([x y & more]
-;      (reduce1 - (- x y) more)))
+(def -' -)
 
 ; (defn <=
 ;   "Returns non-nil if nums are in monotonically non-decreasing order,

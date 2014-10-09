@@ -41,17 +41,17 @@ module Hammock
       namespace = env["__namespace__"] || context
       if namespace.has_var?(name) && (v = namespace.find_var(name))
         v.deref
-      elsif constant?
-        Object.const_get(name)
+      elsif constant
+        constant
       else
         raise "Unable to resolve symbol #@name in this context"
       end
     end
 
-    def constant?
-      first_letter = name[0]
-      first_letter.upcase != first_letter.downcase &&
-        first_letter.upcase == first_letter
+    def constant
+      return @constant if defined?(@constant)
+      n = name.gsub(".", "::")
+      @constant = Object.const_defined?(n) && Object.const_get(n)
     end
 
     def ns
