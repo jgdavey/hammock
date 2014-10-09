@@ -816,20 +816,18 @@
   ([coll index] (. RT (nth coll index)))
   ([coll index not-found] (. RT (nth coll index not-found))))
 
-; (defn <
-;   "Returns non-nil if nums are in monotonically increasing order,
-;   otherwise false."
-;   {:inline (fn [x y] `(. clojure.lang.Numbers (lt ~x ~y)))
-;    :inline-arities #{2}
-;    :added "1.0"}
-;   ([x] true)
-;   ([x y] (. clojure.lang.Numbers (lt x y)))
-;   ([x y & more]
-;    (if (< x y)
-;      (if (next more)
-;        (recur y (first more) (next more))
-;        (< y (first more)))
-;      false)))
+(defn <
+  "Returns non-nil if nums are in monotonically increasing order,
+  otherwise false."
+  {:added "1.0"}
+  ([x] true)
+  ([x y] (. x (< y)))
+  ([x y & more]
+   (if (< x y)
+     (if (next more)
+       (recur y (first more) (next more))
+       (< y (first more)))
+     false)))
 
 (defn inc
   "Returns a number one greater than num. Does not auto-promote
@@ -870,12 +868,12 @@
           (recur f (f val (first s)) (next s))
           val))))
 
-; (defn reverse
-;   "Returns a seq of the items in coll in reverse order. Not lazy."
-;   {:added "1.0"
-;    :static true}
-;   [coll]
-;     (reduce1 conj () coll))
+(defn reverse
+  "Returns a seq of the items in coll in reverse order. Not lazy."
+  {:added "1.0"
+   :static true}
+  [coll]
+    (reduce1 conj () coll))
 
 ; ;;math stuff
 ; (defn ^:private nary-inline

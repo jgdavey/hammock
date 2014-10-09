@@ -1,3 +1,4 @@
+require 'hammock/meta'
 require 'hammock/list_evaluator'
 
 module Hammock
@@ -6,6 +7,7 @@ module Hammock
     include Enumerable
 
     def self.from_array(array)
+      return EmptyList.new if array.empty?
       array.reverse.inject(nil) do |prev, el|
         new(el, prev)
       end
@@ -33,7 +35,7 @@ module Hammock
     end
 
     def cons(item)
-      self.class.new(item, self)
+      ConsCell.new(item, self)
     end
     alias conj cons
 
@@ -41,10 +43,14 @@ module Hammock
       ListEvaluator.evaluate(env, self)
     end
 
+    def empty?
+      false
+    end
+
     def each
       cell = self
       loop do
-        yield cell.car
+        yield cell.car unless cell.empty?
         break unless cell.next?
         cell = cell.cdr
       end
@@ -52,8 +58,24 @@ module Hammock
     end
 
     def inspect
-      "(#{self.map(&:inspect).join(' ')})"
+      "(#{map(&:inspect).join(' ')})"
     end
     alias to_s inspect
+  end
+
+  class EmptyList < ConsCell
+    def initialize(meta=nil)
+      super(nil, nil, meta)
+    end
+
+    def cons(item)
+      ConsCell.new(item, nil)
+    end
+
+    def evaluate(_)
+      self
+    end
+
+    def empty?; true; end
   end
 end

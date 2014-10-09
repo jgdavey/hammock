@@ -1,4 +1,5 @@
 require 'atomic'
+require 'pry'
 require 'pathname'
 require 'hammock/reader'
 require 'hammock/namespace'
@@ -121,8 +122,9 @@ module Hammock
     end
 
     def self.cons(val, sequence)
-      if sequence
-        seq(sequence).cons(val)
+      s = seq(sequence)
+      if s
+        s.cons(val)
       else
         ConsCell.new(val, nil)
       end
@@ -150,11 +152,14 @@ module Hammock
 
     def self.more(sequence)
       if coll = seq(sequence)
-        coll.cdr || ConsCell.new(nil, nil)
+        coll.cdr || EmptyList.new
+      else
+        EmptyList.new
       end
     end
 
     def self.seq(sequence)
+      return nil if sequence.nil? || EmptyList === sequence
       case sequence
       when ConsCell
         sequence
@@ -332,7 +337,7 @@ module Hammock
     end
 
     class List
-      def call(_, env, *args)
+      def call(form, env, *args)
         if Vector === args.last
           *first, last = *args
           args = first + last.to_a
@@ -349,7 +354,7 @@ module Hammock
     end
 
     class Throw
-      def call(_, env, message_or_error)
+      def call(form, env, message_or_error)
         raise message_or_error.evaluate(env)
       end
     end
