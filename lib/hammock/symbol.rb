@@ -31,6 +31,7 @@ module Hammock
       return false unless other.respond_to?(:ns)
       other.ns == ns && other.name == name
     end
+    alias eql? ==
 
     def evaluate(env)
       return env[name] if env.key?(name)

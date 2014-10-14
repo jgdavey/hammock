@@ -381,10 +381,9 @@ module Hammock
           unless map = Thread.current[:gensym_env]
             raise "Gensym literal not in syntax-quote"
           end
-          gs = map.fetch(sym, nil)
-          if !gs
+          unless gs = map[sym.name]
             gs = Symbol.intern(nil, sym.name[0..-2] + "__#{RT.next_id}__auto__")
-            Thread.current[:gensym_env] = map.assoc(sym, gs)
+            Thread.current[:gensym_env] = map.assoc(sym.name, gs)
           end
           sym = gs
         else

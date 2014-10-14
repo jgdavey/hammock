@@ -294,7 +294,7 @@
                   (if (if (.equal RT 'fn ifn)
                         (if (instance? Symbol iname) false true))
                     ;; inserts the same fn name to the inline fn if it does not have one
-                    (assoc m :inline (cons ifn (cons (.intern Symbol (.concat (.name name) "__inliner"))
+                    (assoc m :inline (cons ifn (cons (.intern Symbol (.+ (.name name) "__inliner"))
                                                      (next inline))))
                     m))
               m (conj (if (meta name) (meta name) {}) m)]
@@ -667,6 +667,23 @@
 ;                          (cat (first zs) (next zs)))))))]
 ;        (cat (concat x y) zs))))
 
+;; TODO lazy-seq version
+(defn concat
+  ([] (list))
+  ([x] (list x))
+  ([x y] (let [s (seq x)]
+           (if s
+             (cons (first s) (concat (rest s) y))
+             y)))
+  ([x y & zs]
+     (let [cat (fn cat [xys zs]
+                 (let [xys (seq xys)]
+                   (if xys
+                     (cons (first xys) (cat (rest xys) zs))
+                     (when zs
+                       (cat (first zs) (next zs))))))]
+       (cat (concat x y) zs))))
+
 ; ;;;;;;;;;;;;;;;;at this point all the support for syntax-quote exists;;;;;;;;;;;;;;;;;;;;;;
 ; (defmacro delay
 ;   "Takes a body of expressions and yields a Delay object that will
@@ -689,69 +706,44 @@
 ;    :static true}
 ;   [x] (. clojure.lang.Delay (force x)))
 
-; (defmacro if-not
-;   "Evaluates test. If logical false, evaluates and returns then expr,
-;   otherwise else expr, if supplied, else nil."
-;   {:added "1.0"}
-;   ([test then] `(if-not ~test ~then nil))
-;   ([test then else]
-;    `(if (not ~test) ~then ~else)))
+(defmacro if-not
+  "Evaluates test. If logical false, evaluates and returns then expr,
+  otherwise else expr, if supplied, else nil."
+  {:added "1.0"}
+  ([test then] `(if-not ~test ~then nil))
+  ([test then else]
+   `(if (not ~test) ~then ~else)))
 
-; (defn identical?
-;   "Tests if 2 arguments are the same object"
-;   {:inline (fn [x y] `(. clojure.lang.Util identical ~x ~y))
-;    :inline-arities #{2}
-;    :added "1.0"}
-;   ([x y] (clojure.lang.Util/identical x y)))
+(defn identical?
+  "Tests if 2 arguments are the same object"
+  {:added "1.0"}
+  ([x y] (.equal? x y)))
 
-; ;equiv-based
-; (defn =
-;   "Equality. Returns true if x equals y, false if not. Same as
-;   Java x.equals(y) except it also works for nil, and compares
-;   numbers and collections in a type-independent manner.  Clojure's immutable data
-;   structures define equals() (and thus =) as a value, not an identity,
-;   comparison."
-;   {:inline (fn [x y] `(. clojure.lang.Util equiv ~x ~y))
-;    :inline-arities #{2}
-;    :added "1.0"}
-;   ([x] true)
-;   ([x y] (clojure.lang.Util/equiv x y))
-;   ([x y & more]
-;    (if (clojure.lang.Util/equiv x y)
-;      (if (next more)
-;        (recur y (first more) (next more))
-;        (clojure.lang.Util/equiv y (first more)))
-;      false)))
+(defn =
+  "Equality. Returns true if x equals y, false if not. Same as
+  Java x.equals(y) except it also works for nil, and compares
+  numbers and collections in a type-independent manner.  Clojure's immutable data
+  structures define equals() (and thus =) as a value, not an identity,
+  comparison."
+  {:added "1.0"}
+  ([x] true)
+  ([x y] (.== x y))
+  ([x y & more]
+   (if (.== x y)
+     (if (next more)
+       (recur y (first more) (next more))
+       (.== y (first more)))
+     false)))
 
-; ;equals-based
-; #_(defn =
-;   "Equality. Returns true if x equals y, false if not. Same as Java
-;   x.equals(y) except it also works for nil. Boxed numbers must have
-;   same type. Clojure's immutable data structures define equals() (and
-;   thus =) as a value, not an identity, comparison."
-;   {:inline (fn [x y] `(. clojure.lang.Util equals ~x ~y))
-;    :inline-arities #{2}
-;    :added "1.0"}
-;   ([x] true)
-;   ([x y] (clojure.lang.Util/equals x y))
-;   ([x y & more]
-;    (if (= x y)
-;      (if (next more)
-;        (recur y (first more) (next more))
-;        (= y (first more)))
-;      false)))
-
-; (defn not=
-;   "Same as (not (= obj1 obj2))"
-;   {:tag Boolean
-;    :added "1.0"
-;    :static true}
-;   ([x] false)
-;   ([x y] (not (= x y)))
-;   ([x y & more]
-;    (not (apply = x y more))))
-
-
+(defn not=
+  "Same as (not (= obj1 obj2))"
+  {:tag Boolean
+   :added "1.0"
+   :static true}
+  ([x] false)
+  ([x y] (not (= x y)))
+  ([x y & more]
+   (not (apply = x y more))))
 
 ; (defn compare
 ;   "Comparator. Returns a negative number, zero, or a positive number
@@ -764,29 +756,29 @@
 ;    :added "1.0"}
 ;   [x y] (. clojure.lang.Util (compare x y)))
 
-; (defmacro and
-;   "Evaluates exprs one at a time, from left to right. If a form
-;   returns logical false (nil or false), and returns that value and
-;   doesn't evaluate any of the other expressions, otherwise it returns
-;   the value of the last expr. (and) returns true."
-;   {:added "1.0"}
-;   ([] true)
-;   ([x] x)
-;   ([x & next]
-;    `(let [and# ~x]
-;       (if and# (and ~@next) and#))))
+(defmacro and
+  "Evaluates exprs one at a time, from left to right. If a form
+  returns logical false (nil or false), and returns that value and
+  doesn't evaluate any of the other expressions, otherwise it returns
+  the value of the last expr. (and) returns true."
+  {:added "1.0"}
+  ([] true)
+  ([x] x)
+  ([x & next]
+   `(let [and# ~x]
+      (if and# (and ~@next) and#))))
 
-; (defmacro or
-;   "Evaluates exprs one at a time, from left to right. If a form
-;   returns a logical true value, or returns that value and doesn't
-;   evaluate any of the other expressions, otherwise it returns the
-;   value of the last expression. (or) returns nil."
-;   {:added "1.0"}
-;   ([] nil)
-;   ([x] x)
-;   ([x & next]
-;       `(let [or# ~x]
-;          (if or# or# (or ~@next)))))
+(defmacro or
+  "Evaluates exprs one at a time, from left to right. If a form
+  returns a logical true value, or returns that value and doesn't
+  evaluate any of the other expressions, otherwise it returns the
+  value of the last expression. (or) returns nil."
+  {:added "1.0"}
+  ([] nil)
+  ([x] x)
+  ([x & next]
+      `(let [or# ~x]
+         (if or# or# (or ~@next)))))
 
 ; ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
 (defn zero?
@@ -833,7 +825,9 @@
   "Returns a number one greater than num. Does not auto-promote
   longs, will throw on overflow. See also: inc'"
   {:added "1.2"}
-  [x] (. x succ))
+  [x] (.+ 1 x))
+
+(def inc' inc)
 
 ; ;; reduce is defined again later after InternalReduce loads
 ; (defn ^:private ^:static
@@ -935,50 +929,44 @@
 
 (def -' -)
 
-; (defn <=
-;   "Returns non-nil if nums are in monotonically non-decreasing order,
-;   otherwise false."
-;   {:inline (fn [x y] `(. clojure.lang.Numbers (lte ~x ~y)))
-;    :inline-arities #{2}
-;    :added "1.0"}
-;   ([x] true)
-;   ([x y] (. clojure.lang.Numbers (lte x y)))
-;   ([x y & more]
-;    (if (<= x y)
-;      (if (next more)
-;        (recur y (first more) (next more))
-;        (<= y (first more)))
-;      false)))
+(defn <=
+  "Returns non-nil if nums are in monotonically non-decreasing order,
+  otherwise false."
+  {:added "1.0"}
+  ([x] true)
+  ([x y] (.<= x y))
+  ([x y & more]
+   (if (<= x y)
+     (if (next more)
+       (recur y (first more) (next more))
+       (<= y (first more)))
+     false)))
 
-; (defn >
-;   "Returns non-nil if nums are in monotonically decreasing order,
-;   otherwise false."
-;   {:inline (fn [x y] `(. clojure.lang.Numbers (gt ~x ~y)))
-;    :inline-arities #{2}
-;    :added "1.0"}
-;   ([x] true)
-;   ([x y] (. clojure.lang.Numbers (gt x y)))
-;   ([x y & more]
-;    (if (> x y)
-;      (if (next more)
-;        (recur y (first more) (next more))
-;        (> y (first more)))
-;      false)))
+(defn >
+  "Returns non-nil if nums are in monotonically decreasing order,
+  otherwise false."
+  {:added "1.0"}
+  ([x] true)
+  ([x y] (.> x y))
+  ([x y & more]
+   (if (> x y)
+     (if (next more)
+       (recur y (first more) (next more))
+       (> y (first more)))
+     false)))
 
-; (defn >=
-;   "Returns non-nil if nums are in monotonically non-increasing order,
-;   otherwise false."
-;   {:inline (fn [x y] `(. clojure.lang.Numbers (gte ~x ~y)))
-;    :inline-arities #{2}
-;    :added "1.0"}
-;   ([x] true)
-;   ([x y] (. clojure.lang.Numbers (gte x y)))
-;   ([x y & more]
-;    (if (>= x y)
-;      (if (next more)
-;        (recur y (first more) (next more))
-;        (>= y (first more)))
-;      false)))
+(defn >=
+  "Returns non-nil if nums are in monotonically non-increasing order,
+  otherwise false."
+  {:added "1.0"}
+  ([x] true)
+  ([x y] (.>= x y))
+  ([x y & more]
+   (if (>= x y)
+     (if (next more)
+       (recur y (first more) (next more))
+       (>= y (first more)))
+     false)))
 
 ; (defn ==
 ;   "Returns non-nil if nums all have the equivalent
@@ -1015,19 +1003,12 @@
 ;   ([x y & more]
 ;    (reduce1 min (min x y) more)))
 
-; (defn dec'
-;   "Returns a number one less than num. Supports arbitrary precision.
-;   See also: dec"
-;   {:inline (fn [x] `(. clojure.lang.Numbers (decP ~x)))
-;    :added "1.0"}
-;   [x] (. clojure.lang.Numbers (decP x)))
+(defn dec
+  "Returns a number one less than num. Supports arbitrary precision."
+  {:added "1.0"}
+  [x] (.- x 1))
 
-; (defn dec
-;   "Returns a number one less than num. Does not auto-promote
-;   longs, will throw on overflow. See also: dec'"
-;   {:inline (fn [x] `(. clojure.lang.Numbers (~(if *unchecked-math* 'unchecked_dec 'dec) ~x)))
-;    :added "1.2"}
-;   [x] (. clojure.lang.Numbers (dec x)))
+(def dec' dec)
 
 ; (defn unchecked-inc-int
 ;   "Returns a number one greater than x, an int.
@@ -1127,19 +1108,15 @@
 ;    :added "1.0"}
 ;   [x y] (. clojure.lang.Numbers (unchecked_int_remainder x y)))
 
-; (defn pos?
-;   "Returns true if num is greater than zero, else false"
-;   {
-;    :inline (fn [x] `(. clojure.lang.Numbers (isPos ~x)))
-;    :added "1.0"}
-;   [x] (. clojure.lang.Numbers (isPos x)))
+(defn pos?
+  "Returns true if num is greater than zero, else false"
+  {:added "1.0"}
+  [x] (.> x 0))
 
-; (defn neg?
-;   "Returns true if num is less than zero, else false"
-;   {
-;    :inline (fn [x] `(. clojure.lang.Numbers (isNeg ~x)))
-;    :added "1.0"}
-;   [x] (. clojure.lang.Numbers (isNeg x)))
+(defn neg?
+  "Returns true if num is less than zero, else false"
+  {:added "1.0"}
+  [x] (.< x 0))
 
 ; (defn quot
 ;   "quot[ient] of dividing numerator by denominator."
@@ -1456,55 +1433,55 @@
 ;       (finally
 ;        (monitor-exit lockee#)))))
 
-; (defmacro ..
-;   "form => fieldName-symbol or (instanceMethodName-symbol args*)
+(defmacro ..
+  "form => fieldName-symbol or (instanceMethodName-symbol args*)
 
-;   Expands into a member access (.) of the first member on the first
-;   argument, followed by the next member on the result, etc. For
-;   instance:
+  Expands into a member access (.) of the first member on the first
+  argument, followed by the next member on the result, etc. For
+  instance:
 
-;   (.. System (getProperties) (get \"os.name\"))
+  (.. System (getProperties) (get \"os.name\"))
 
-;   expands to:
+  expands to:
 
-;   (. (. System (getProperties)) (get \"os.name\"))
+  (. (. System (getProperties)) (get \"os.name\"))
 
-;   but is easier to write, read, and understand."
-;   {:added "1.0"}
-;   ([x form] `(. ~x ~form))
-;   ([x form & more] `(.. (. ~x ~form) ~@more)))
+  but is easier to write, read, and understand."
+  {:added "1.0"}
+  ([x form] `(. ~x ~form))
+  ([x form & more] `(.. (. ~x ~form) ~@more)))
 
-; (defmacro ->
-;   "Threads the expr through the forms. Inserts x as the
-;   second item in the first form, making a list of it if it is not a
-;   list already. If there are more forms, inserts the first form as the
-;   second item in second form, etc."
-;   {:added "1.0"}
-;   [x & forms]
-;   (loop [x x, forms forms]
-;     (if forms
-;       (let [form (first forms)
-;             threaded (if (seq? form)
-;                        (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-;                        (list form x))]
-;         (recur threaded (next forms)))
-;       x)))
+(defmacro ->
+  "Threads the expr through the forms. Inserts x as the
+  second item in the first form, making a list of it if it is not a
+  list already. If there are more forms, inserts the first form as the
+  second item in second form, etc."
+  {:added "1.0"}
+  [x & forms]
+  (loop [x x, forms forms]
+    (if forms
+      (let [form (first forms)
+            threaded (if (seq? form)
+                       (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+                       (list form x))]
+        (recur threaded (next forms)))
+      x)))
 
-; (defmacro ->>
-;   "Threads the expr through the forms. Inserts x as the
-;   last item in the first form, making a list of it if it is not a
-;   list already. If there are more forms, inserts the first form as the
-;   last item in second form, etc."
-;   {:added "1.1"}
-;   [x & forms]
-;   (loop [x x, forms forms]
-;     (if forms
-;       (let [form (first forms)
-;             threaded (if (seq? form)
-;               (with-meta `(~(first form) ~@(next form)  ~x) (meta form))
-;               (list form x))]
-;         (recur threaded (next forms)))
-;       x)))
+(defmacro ->>
+  "Threads the expr through the forms. Inserts x as the
+  last item in the first form, making a list of it if it is not a
+  list already. If there are more forms, inserts the first form as the
+  last item in second form, etc."
+  {:added "1.1"}
+  [x & forms]
+  (loop [x x, forms forms]
+    (if forms
+      (let [form (first forms)
+            threaded (if (seq? form)
+              (with-meta `(~(first form) ~@(next form)  ~x) (meta form))
+              (list form x))]
+        (recur threaded (next forms)))
+      x)))
 
 ; (def map)
 
@@ -1628,86 +1605,86 @@
 
 ; ;;;;;;;;; var stuff
 
-; (defmacro ^{:private true} assert-args
-;   [& pairs]
-;   `(do (when-not ~(first pairs)
-;          (throw (IllegalArgumentException.
-;                   (str (first ~'&form) " requires " ~(second pairs) " in " ~'*ns* ":" (:line (meta ~'&form))))))
-;      ~(let [more (nnext pairs)]
-;         (when more
-;           (list* `assert-args more)))))
+(defmacro ^{:private true} assert-args
+  [& pairs]
+  `(do (when-not ~(first pairs)
+         (throw (ArgumentError.
+                  (str (first ~'&form) " requires " ~(second pairs) " in " ~'*ns* ":" (:line (meta ~'&form))))))
+     ~(let [more (nnext pairs)]
+        (when more
+          (list* `assert-args more)))))
 
-; (defmacro if-let
-;   "bindings => binding-form test
+(defmacro if-let
+  "bindings => binding-form test
 
-;   If test is true, evaluates then with binding-form bound to the value of
-;   test, if not, yields else"
-;   {:added "1.0"}
-;   ([bindings then]
-;    `(if-let ~bindings ~then nil))
-;   ([bindings then else & oldform]
-;    (assert-args
-;      (vector? bindings) "a vector for its binding"
-;      (nil? oldform) "1 or 2 forms after binding vector"
-;      (= 2 (count bindings)) "exactly 2 forms in binding vector")
-;    (let [form (bindings 0) tst (bindings 1)]
-;      `(let [temp# ~tst]
-;         (if temp#
-;           (let [~form temp#]
-;             ~then)
-;           ~else)))))
+  If test is true, evaluates then with binding-form bound to the value of
+  test, if not, yields else"
+  {:added "1.0"}
+  ([bindings then]
+   `(if-let ~bindings ~then nil))
+  ([bindings then else & oldform]
+   (assert-args
+     (vector? bindings) "a vector for its binding"
+     (nil? oldform) "1 or 2 forms after binding vector"
+     (= 2 (count bindings)) "exactly 2 forms in binding vector")
+   (let [form (bindings 0) tst (bindings 1)]
+     `(let [temp# ~tst]
+        (if temp#
+          (let [~form temp#]
+            ~then)
+          ~else)))))
 
-; (defmacro when-let
-;   "bindings => binding-form test
+(defmacro when-let
+  "bindings => binding-form test
 
-;   When test is true, evaluates body with binding-form bound to the value of test"
-;   {:added "1.0"}
-;   [bindings & body]
-;   (assert-args
-;      (vector? bindings) "a vector for its binding"
-;      (= 2 (count bindings)) "exactly 2 forms in binding vector")
-;    (let [form (bindings 0) tst (bindings 1)]
-;     `(let [temp# ~tst]
-;        (when temp#
-;          (let [~form temp#]
-;            ~@body)))))
+  When test is true, evaluates body with binding-form bound to the value of test"
+  {:added "1.0"}
+  [bindings & body]
+  (assert-args
+     (vector? bindings) "a vector for its binding"
+     (= 2 (count bindings)) "exactly 2 forms in binding vector")
+   (let [form (bindings 0) tst (bindings 1)]
+    `(let [temp# ~tst]
+       (when temp#
+         (let [~form temp#]
+           ~@body)))))
 
-; (defmacro if-some
-;   "bindings => binding-form test
+(defmacro if-some
+  "bindings => binding-form test
 
-;    If test is not nil, evaluates then with binding-form bound to the
-;    value of test, if not, yields else"
-;   {:added "1.6"}
-;   ([bindings then]
-;    `(if-some ~bindings ~then nil))
-;   ([bindings then else & oldform]
-;    (assert-args
-;      (vector? bindings) "a vector for its binding"
-;      (nil? oldform) "1 or 2 forms after binding vector"
-;      (= 2 (count bindings)) "exactly 2 forms in binding vector")
-;    (let [form (bindings 0) tst (bindings 1)]
-;      `(let [temp# ~tst]
-;         (if (nil? temp#)
-;           ~else
-;           (let [~form temp#]
-;             ~then))))))
+   If test is not nil, evaluates then with binding-form bound to the
+   value of test, if not, yields else"
+  {:added "1.6"}
+  ([bindings then]
+   `(if-some ~bindings ~then nil))
+  ([bindings then else & oldform]
+   (assert-args
+     (vector? bindings) "a vector for its binding"
+     (nil? oldform) "1 or 2 forms after binding vector"
+     (= 2 (count bindings)) "exactly 2 forms in binding vector")
+   (let [form (bindings 0) tst (bindings 1)]
+     `(let [temp# ~tst]
+        (if (nil? temp#)
+          ~else
+          (let [~form temp#]
+            ~then))))))
 
-; (defmacro when-some
-;   "bindings => binding-form test
+(defmacro when-some
+  "bindings => binding-form test
 
-;    When test is not nil, evaluates body with binding-form bound to the
-;    value of test"
-;   {:added "1.6"}
-;   [bindings & body]
-;   (assert-args
-;      (vector? bindings) "a vector for its binding"
-;      (= 2 (count bindings)) "exactly 2 forms in binding vector")
-;    (let [form (bindings 0) tst (bindings 1)]
-;     `(let [temp# ~tst]
-;        (if (nil? temp#)
-;          nil
-;          (let [~form temp#]
-;            ~@body)))))
+   When test is not nil, evaluates body with binding-form bound to the
+   value of test"
+  {:added "1.6"}
+  [bindings & body]
+  (assert-args
+     (vector? bindings) "a vector for its binding"
+     (= 2 (count bindings)) "exactly 2 forms in binding vector")
+   (let [form (bindings 0) tst (bindings 1)]
+    `(let [temp# ~tst]
+       (if (nil? temp#)
+         nil
+         (let [~form temp#]
+           ~@body)))))
 
 ; (defn push-thread-bindings
 ;   "WARNING: This is a low-level function. Prefer high-level macros like
@@ -2336,93 +2313,93 @@
 ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; fn stuff ;;;;;;;;;;;;;;;;
 
 
-; (defn comp
-;   "Takes a set of functions and returns a fn that is the composition
-;   of those fns.  The returned fn takes a variable number of args,
-;   applies the rightmost of fns to the args, the next
-;   fn (right-to-left) to the result, etc."
-;   {:added "1.0"
-;    :static true}
-;   ([] identity)
-;   ([f] f)
-;   ([f g]
-;      (fn
-;        ([] (f (g)))
-;        ([x] (f (g x)))
-;        ([x y] (f (g x y)))
-;        ([x y z] (f (g x y z)))
-;        ([x y z & args] (f (apply g x y z args)))))
-;   ([f g & fs]
-;      (reduce1 comp (list* f g fs))))
+(defn comp
+  "Takes a set of functions and returns a fn that is the composition
+  of those fns.  The returned fn takes a variable number of args,
+  applies the rightmost of fns to the args, the next
+  fn (right-to-left) to the result, etc."
+  {:added "1.0"
+   :static true}
+  ([] identity)
+  ([f] f)
+  ([f g]
+     (fn
+       ([] (f (g)))
+       ([x] (f (g x)))
+       ([x y] (f (g x y)))
+       ([x y z] (f (g x y z)))
+       ([x y z & args] (f (apply g x y z args)))))
+  ([f g & fs]
+     (reduce1 comp (list* f g fs))))
 
-; (defn juxt
-;   "Takes a set of functions and returns a fn that is the juxtaposition
-;   of those fns.  The returned fn takes a variable number of args, and
-;   returns a vector containing the result of applying each fn to the
-;   args (left-to-right).
-;   ((juxt a b c) x) => [(a x) (b x) (c x)]"
-;   {:added "1.1"
-;    :static true}
-;   ([f]
-;      (fn
-;        ([] [(f)])
-;        ([x] [(f x)])
-;        ([x y] [(f x y)])
-;        ([x y z] [(f x y z)])
-;        ([x y z & args] [(apply f x y z args)])))
-;   ([f g]
-;      (fn
-;        ([] [(f) (g)])
-;        ([x] [(f x) (g x)])
-;        ([x y] [(f x y) (g x y)])
-;        ([x y z] [(f x y z) (g x y z)])
-;        ([x y z & args] [(apply f x y z args) (apply g x y z args)])))
-;   ([f g h]
-;      (fn
-;        ([] [(f) (g) (h)])
-;        ([x] [(f x) (g x) (h x)])
-;        ([x y] [(f x y) (g x y) (h x y)])
-;        ([x y z] [(f x y z) (g x y z) (h x y z)])
-;        ([x y z & args] [(apply f x y z args) (apply g x y z args) (apply h x y z args)])))
-;   ([f g h & fs]
-;      (let [fs (list* f g h fs)]
-;        (fn
-;          ([] (reduce1 #(conj %1 (%2)) [] fs))
-;          ([x] (reduce1 #(conj %1 (%2 x)) [] fs))
-;          ([x y] (reduce1 #(conj %1 (%2 x y)) [] fs))
-;          ([x y z] (reduce1 #(conj %1 (%2 x y z)) [] fs))
-;          ([x y z & args] (reduce1 #(conj %1 (apply %2 x y z args)) [] fs))))))
+(defn juxt
+  "Takes a set of functions and returns a fn that is the juxtaposition
+  of those fns.  The returned fn takes a variable number of args, and
+  returns a vector containing the result of applying each fn to the
+  args (left-to-right).
+  ((juxt a b c) x) => [(a x) (b x) (c x)]"
+  {:added "1.1"
+   :static true}
+  ([f]
+     (fn
+       ([] [(f)])
+       ([x] [(f x)])
+       ([x y] [(f x y)])
+       ([x y z] [(f x y z)])
+       ([x y z & args] [(apply f x y z args)])))
+  ([f g]
+     (fn
+       ([] [(f) (g)])
+       ([x] [(f x) (g x)])
+       ([x y] [(f x y) (g x y)])
+       ([x y z] [(f x y z) (g x y z)])
+       ([x y z & args] [(apply f x y z args) (apply g x y z args)])))
+  ([f g h]
+     (fn
+       ([] [(f) (g) (h)])
+       ([x] [(f x) (g x) (h x)])
+       ([x y] [(f x y) (g x y) (h x y)])
+       ([x y z] [(f x y z) (g x y z) (h x y z)])
+       ([x y z & args] [(apply f x y z args) (apply g x y z args) (apply h x y z args)])))
+  ([f g h & fs]
+     (let [fs (list* f g h fs)]
+       (fn
+         ([] (reduce1 (fn [acc f] (conj acc (f))) [] fs))
+         ([x] (reduce1 (fn [acc f] (conj acc (f x))) [] fs))
+         ([x y] (reduce1 (fn [acc f] (conj acc (f x y))) [] fs))
+         ([x y z] (reduce1 (fn [acc f] (conj acc (f x y z))) [] fs))
+         ([x y z & args] (reduce1 (fn [acc f] (conj acc (apply f x y z args))) [] fs))))))
 
-; (defn partial
-;   "Takes a function f and fewer than the normal arguments to f, and
-;   returns a fn that takes a variable number of additional args. When
-;   called, the returned function calls f with args + additional args."
-;   {:added "1.0"
-;    :static true}
-;   ([f] f)
-;   ([f arg1]
-;    (fn
-;      ([] (f arg1))
-;      ([x] (f arg1 x))
-;      ([x y] (f arg1 x y))
-;      ([x y z] (f arg1 x y z))
-;      ([x y z & args] (apply f arg1 x y z args))))
-;   ([f arg1 arg2]
-;    (fn
-;      ([] (f arg1 arg2))
-;      ([x] (f arg1 arg2 x))
-;      ([x y] (f arg1 arg2 x y))
-;      ([x y z] (f arg1 arg2 x y z))
-;      ([x y z & args] (apply f arg1 arg2 x y z args))))
-;   ([f arg1 arg2 arg3]
-;    (fn
-;      ([] (f arg1 arg2 arg3))
-;      ([x] (f arg1 arg2 arg3 x))
-;      ([x y] (f arg1 arg2 arg3 x y))
-;      ([x y z] (f arg1 arg2 arg3 x y z))
-;      ([x y z & args] (apply f arg1 arg2 arg3 x y z args))))
-;   ([f arg1 arg2 arg3 & more]
-;    (fn [& args] (apply f arg1 arg2 arg3 (concat more args)))))
+(defn partial
+  "Takes a function f and fewer than the normal arguments to f, and
+  returns a fn that takes a variable number of additional args. When
+  called, the returned function calls f with args + additional args."
+  {:added "1.0"
+   :static true}
+  ([f] f)
+  ([f arg1]
+   (fn
+     ([] (f arg1))
+     ([x] (f arg1 x))
+     ([x y] (f arg1 x y))
+     ([x y z] (f arg1 x y z))
+     ([x y z & args] (apply f arg1 x y z args))))
+  ([f arg1 arg2]
+   (fn
+     ([] (f arg1 arg2))
+     ([x] (f arg1 arg2 x))
+     ([x y] (f arg1 arg2 x y))
+     ([x y z] (f arg1 arg2 x y z))
+     ([x y z & args] (apply f arg1 arg2 x y z args))))
+  ([f arg1 arg2 arg3]
+   (fn
+     ([] (f arg1 arg2 arg3))
+     ([x] (f arg1 arg2 arg3 x))
+     ([x y] (f arg1 arg2 arg3 x y))
+     ([x y z] (f arg1 arg2 arg3 x y z))
+     ([x y z & args] (apply f arg1 arg2 arg3 x y z args))))
+  ([f arg1 arg2 arg3 & more]
+   (fn [& args] (apply f arg1 arg2 arg3 (concat more args)))))
 
 ; ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2445,60 +2422,60 @@
 ;   ([xform coll & colls]
 ;      (clojure.lang.LazyTransformer/createMulti xform (to-array (cons coll colls)))))
 
-; (defn every?
-;   "Returns true if (pred x) is logical true for every x in coll, else
-;   false."
-;   {:tag Boolean
-;    :added "1.0"
-;    :static true}
-;   [pred coll]
-;   (cond
-;    (nil? (seq coll)) true
-;    (pred (first coll)) (recur pred (next coll))
-;    :else false))
+(defn every?
+  "Returns true if (pred x) is logical true for every x in coll, else
+  false."
+  {:added "1.0"
+   :static true}
+  [pred coll]
+  (cond
+   (nil? (seq coll)) true
+   (pred (first coll)) (recur pred (next coll))
+   :else false))
 
-; (def
-;  ^{:tag Boolean
-;    :doc "Returns false if (pred x) is logical true for every x in
-;   coll, else true."
-;    :arglists '([pred coll])
-;    :added "1.0"}
-;  not-every? (comp not every?))
+(def
+ ^{:doc "Returns false if (pred x) is logical true for every x in
+  coll, else true."
+   :arglists '([pred coll])
+   :added "1.0"}
+ not-every? (comp not every?))
 
-; (defn some
-;   "Returns the first logical true value of (pred x) for any x in coll,
-;   else nil.  One common idiom is to use a set as pred, for example
-;   this will return :fred if :fred is in the sequence, otherwise nil:
-;   (some #{:fred} coll)"
-;   {:added "1.0"
-;    :static true}
-;   [pred coll]
-;     (when (seq coll)
-;       (or (pred (first coll)) (recur pred (next coll)))))
+(defn some
+  "Returns the first logical true value of (pred x) for any x in coll,
+  else nil.  One common idiom is to use a set as pred, for example
+  this will return :fred if :fred is in the sequence, otherwise nil:
+  (some #{:fred} coll)"
+  {:added "1.0"
+   :static true}
+  [pred coll]
+    (when (seq coll)
+      (let [x (pred (first coll))]
+        (if x
+          x
+          (recur pred (next coll))))))
 
-; (def
-;  ^{:tag Boolean
-;    :doc "Returns false if (pred x) is logical true for any x in coll,
-;   else true."
-;    :arglists '([pred coll])
-;    :added "1.0"}
-;  not-any? (comp not some))
+(def
+ ^{:doc "Returns false if (pred x) is logical true for any x in coll,
+  else true."
+   :arglists '([pred coll])
+   :added "1.0"}
+ not-any? (comp not some))
 
 ; ;will be redefed later with arg checks
-; (defmacro dotimes
-;   "bindings => name n
+(defmacro dotimes
+  "bindings => name n
 
-;   Repeatedly executes body (presumably for side-effects) with name
-;   bound to integers from 0 through n-1."
-;   {:added "1.0"}
-;   [bindings & body]
-;   (let [i (first bindings)
-;         n (second bindings)]
-;     `(let [n# (clojure.lang.RT/longCast ~n)]
-;        (loop [~i 0]
-;          (when (< ~i n#)
-;            ~@body
-;            (recur (unchecked-inc ~i)))))))
+  Repeatedly executes body (presumably for side-effects) with name
+  bound to integers from 0 through n-1."
+  {:added "1.0"}
+  [bindings & body]
+  (let [i (first bindings)
+        n (second bindings)]
+    `(let [n# (int ~n)]
+       (loop [~i 0]
+         (when (< ~i n#)
+           ~@body
+           (recur (inc ~i)))))))
 
 ; (defn map
 ;   "Returns a lazy sequence consisting of the result of applying f to
