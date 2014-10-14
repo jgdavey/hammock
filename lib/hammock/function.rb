@@ -64,6 +64,7 @@ module Hammock
       arity = find_arity!(*args)
 
       env = @env.bind("__namespace__", @ns)
+      env = @env.bind(@internal_name, self)
 
       locals = args
 
