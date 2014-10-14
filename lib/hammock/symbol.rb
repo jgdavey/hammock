@@ -47,7 +47,10 @@ module Hammock
     def constant
       return @constant if defined?(@constant)
       n = name.gsub(".", "::")
-      @constant = Object.const_defined?(n) && Object.const_get(n)
+      @constant = begin
+                    Object.const_defined?(n) && Object.const_get(n)
+                  rescue NameError
+                  end
     end
 
     def ns
