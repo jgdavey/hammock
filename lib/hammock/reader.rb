@@ -2,6 +2,7 @@ require 'delegate'
 require 'hammock/meta'
 require 'hammock/cons_cell'
 require 'hammock/map'
+require 'hammock/rt'
 require 'hammock/set'
 require 'hammock/symbol'
 require 'hammock/token'
@@ -50,6 +51,15 @@ module Hammock
     }
 
     # SYMBOL_PATTERN = Regexp.new("^:?([^/0-9].*/)?(/|[^/0-9][^/]*)$")
+    UNQUOTE = Symbol.intern("clojure.core", "unquote")
+    UNQUOTE_SPLICING = Symbol.intern("clojure.core", "unquote-splicing")
+    APPLY = Symbol.intern("clojure.core", "apply")
+    SEQ = Symbol.intern("clojure.core", "seq")
+    CONCAT = Symbol.intern("clojure.core", "concat")
+    LIST = Symbol.intern("list")
+    VECTOR = Symbol.intern("clojure.core", "vector")
+    HASHMAP = Symbol.intern("clojure.core", "hash-map")
+    HASHSET = Symbol.intern("clojure.core", "hash-set")
 
     MACROS = {
       ?( => :read_list,
@@ -65,6 +75,7 @@ module Hammock
       ?' => :read_quoted,
       ?` => :read_syntax_quoted,
       ?^ => :read_meta,
+      ?~ => :read_unquote,
     "\\" => :read_char
     }
 
@@ -329,9 +340,114 @@ module Hammock
       Hammock::Quote.new read(io)
     end
 
+    def read_unquote(io, quote_mark)
+      char = io.getc
+      if char == "@"
+        ret = read(io)
+        RT.list(UNQUOTE_SPLICING, ret)
+      else
+        io.backc
+        ret = read(io)
+        RT.list(UNQUOTE, ret)
+      end
+    end
+
     def read_syntax_quoted(io, quote_mark)
-      # TODO handle lists, unquotes, splicing
-      Hammock::Quote.new read(io)
+      form = read(io)
+      Thread.current[:gensym_env] = Map.new
+      syntax_quote(form)
+    ensure
+      Thread.current[:gensym_env] = nil
+    end
+
+    #   IPersistentMap gmap = (IPersistentMap) GENSYM_ENV.deref();
+    #   if(gmap == null)
+    #     throw new IllegalStateException("Gensym literal not in syntax-quote");
+    #     Symbol gs = (Symbol) gmap.valAt(sym);
+    #     if(gs == null)
+    #       GENSYM_ENV.set(gmap.assoc(sym, gs = Symbol.intern(null,
+    #                                                         sym.name.substring(0, sym.name.length() - 1)
+    #       + "__" + RT.nextID() + "__auto__")));
+    #       sym = gs;
+
+    def syntax_quote(form)
+      ret = nil
+      return unless form
+      if RT.special(form)
+        ret = Hammock::Quote.new form
+      elsif Hammock::Symbol === form
+        sym = form
+        if !sym.ns && sym.name.end_with?("#")
+          unless map = Thread.current[:gensym_env]
+            raise "Gensym literal not in syntax-quote"
+          end
+          gs = map.fetch(sym, nil)
+          if !gs
+            gs = Symbol.intern(nil, sym.name[0..-2] + "__#{RT.next_id}__auto__")
+            Thread.current[:gensym_env] = map.assoc(sym, gs)
+          end
+          sym = gs
+        else
+          ns = RT::CURRENT_NS.deref
+          lookup = ns.find_var(sym.name)
+          if lookup
+            sym = Hammock::Symbol.intern(ns.name, sym.name)
+          else
+            sym
+          end
+        end
+        ret = Hammock::Quote.new sym
+      elsif form.respond_to?(:first)
+        if form.first == UNQUOTE
+          ret = form.cdr.car
+        elsif form.first == UNQUOTE_SPLICING
+          raise "This is a problem"
+        elsif Map === form
+          ret = RT.list(APPLY, HASHMAP, RT.list(SEQ, RT.cons(CONCAT, syntax_quote_expand_list(form))))
+        elsif Hammock::Set === form
+          ret = RT.list(APPLY, HASHSET, RT.list(SEQ, RT.cons(CONCAT, syntax_quote_expand_list(form))))
+        elsif Vector === form
+          ret = RT.list(APPLY, VECTOR, RT.list(SEQ, RT.cons(CONCAT, syntax_quote_expand_list(form))))
+        elsif ConsCell === form
+          seq = RT.seq(form)
+          if seq
+            ret = RT.list(SEQ, RT.cons(CONCAT, syntax_quote_expand_list(seq)))
+          else
+            ret = RT.cons(Hammock::Symbol.intern("list"), nil)
+          end
+        end
+      elsif String === form || Numeric === form || ::Symbol === form
+        ret = form
+      else
+        ret = Hammock::Quote.new(form)
+      end
+      ret
+    end
+
+
+    def unquote?(form)
+      UNQUOTE == RT.first(form)
+    end
+
+    def unquote_splicing?(form)
+      UNQUOTE_SPLICING == RT.first(form)
+    end
+
+    def syntax_quote_expand_list(seq)
+      ret = Vector.new
+      seq = RT.seq(seq)
+      while seq
+        item = seq.first
+        if unquote?(item)
+          ret = ret.cons(RT.list(LIST, RT.second(item)))
+        elsif unquote_splicing?(item)
+          ret = ret.cons(RT.second(item))
+        else
+          ret = ret.cons(RT.list(LIST, syntax_quote(item)))
+        end
+        seq = seq.cdr
+      end
+      RT.seq(ret)
     end
 
     def read_var(io, quote_mark)

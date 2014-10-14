@@ -202,6 +202,21 @@ describe Hammock::Reader do
     expect { read_string(str) }.to raise_error
   end
 
+  it "reads syntax quoted clojure.core things" do
+    read_string("(def foo 1)").evaluate(Hammock::RT.global_env)
+    str = '`foo'
+    result = read_string(str)
+    expected = Hammock::Symbol.intern("clojure.core", "foo")
+    expect(result.value).to eq expected
+  end
+
+  it "reads unquotes" do
+    str = '`~blah'
+    result = read_string(str)
+    expected = Hammock::Symbol.intern("blah")
+    expect(result).to eq expected
+  end
+
   it "reads from a file" do
     reader = Hammock::Reader.new
     result = nil

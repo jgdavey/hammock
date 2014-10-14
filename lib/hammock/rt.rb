@@ -144,6 +144,14 @@ module Hammock
       end
     end
 
+    def self.second(sequence)
+      if coll = seq(sequence)
+        if coll = coll.cdr
+          coll.car
+        end
+      end
+    end
+
     def self.next(sequence)
       if coll = seq(sequence)
         coll.cdr
