@@ -28,12 +28,8 @@ module Hammock
 
     def ==(other)
       return false unless other.respond_to?(:name)
-      if @ns
-        return false unless other.respond_to?(:ns)
-        other.ns == @ns && other.name == @name
-      else
-        other.name == @name
-      end
+      return false unless other.respond_to?(:ns)
+      other.ns == ns && other.name == name
     end
 
     def evaluate(env)
