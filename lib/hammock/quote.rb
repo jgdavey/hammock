@@ -14,5 +14,9 @@ module Hammock
     def evaluate(_)
       @value
     end
+
+    def inspect
+      "'#{@value.inspect}"
+    end
   end
 end
