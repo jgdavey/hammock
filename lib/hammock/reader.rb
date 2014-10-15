@@ -57,9 +57,11 @@ module Hammock
     SEQ = Symbol.intern("clojure.core", "seq")
     CONCAT = Symbol.intern("clojure.core", "concat")
     LIST = Symbol.intern("list")
+    AMP = Symbol.intern("&")
     VECTOR = Symbol.intern("clojure.core", "vector")
     HASHMAP = Symbol.intern("clojure.core", "hash-map")
     HASHSET = Symbol.intern("clojure.core", "hash-set")
+    FN = Symbol.intern("clojure.core", "fn")
 
     MACROS = {
       ?( => :read_list,
@@ -72,6 +74,7 @@ module Hammock
       ?" => :read_string,
       ?; => :read_comment,
       ?# => :read_dispatched,
+      ?% => :read_arg,
       ?' => :read_quoted,
       ?` => :read_syntax_quoted,
       ?^ => :read_meta,
@@ -83,6 +86,7 @@ module Hammock
       ?{ => :read_set,
       ?" => :read_regex,
       ?^ => :read_meta,
+      ?( => :read_function,
       ?' => :read_var
     }
 
@@ -138,11 +142,15 @@ module Hammock
           break ret
         else
           token = read_token(io, char)
-          break TOKENS.fetch(token) { Symbol.intern(token) }
+          break interpret_token(token)
         end
 
         break if io.eof?
       end
+    end
+
+    def interpret_token(token)
+      TOKENS.fetch(token) { Symbol.intern(token) }
     end
 
     def read_list(io, char)
@@ -360,16 +368,6 @@ module Hammock
       Thread.current[:gensym_env] = nil
     end
 
-    #   IPersistentMap gmap = (IPersistentMap) GENSYM_ENV.deref();
-    #   if(gmap == null)
-    #     throw new IllegalStateException("Gensym literal not in syntax-quote");
-    #     Symbol gs = (Symbol) gmap.valAt(sym);
-    #     if(gs == null)
-    #       GENSYM_ENV.set(gmap.assoc(sym, gs = Symbol.intern(null,
-    #                                                         sym.name.substring(0, sym.name.length() - 1)
-    #       + "__" + RT.nextID() + "__auto__")));
-    #       sym = gs;
-
     def syntax_quote(form)
       ret = nil
       return unless form
@@ -453,6 +451,32 @@ module Hammock
       Hammock::ConsCell.new THE_VAR, read(io)
     end
 
+    def read_function(io, paren)
+      Thread.current[:arg_env] = Map.new
+      io.backc
+      form = read(io)
+      args = Vector.new
+      argsyms = Thread.current[:arg_env]
+      keys = argsyms.keys.to_a
+      unless argsyms.empty?
+        higharg = keys.last
+        if higharg > 0
+          (1..higharg).each do |i|
+            sym = argsyms[i] || garg(i)
+            args = args.cons(sym)
+          end
+        end
+
+        if restsym = argsyms[-1]
+          args = args.cons(AMP)
+          args = args.cons(restsym)
+        end
+      end
+      RT.list(FN, args, form)
+    ensure
+      Thread.current[:arg_env] = nil
+    end
+
     def read_meta(io, hat)
       meta = read(io)
       if ::Symbol === meta
@@ -483,5 +507,44 @@ module Hammock
       end
       chars
     end
+
+    def garg(n)
+      Symbol.intern (n == -1 ? "rest" : "p#{n}") + "__#{RT.next_id}#"
+    end
+
+    def register_arg(n)
+      argsyms = Thread.current[:arg_env]
+      if(!argsyms)
+        raise ArgumentError, "arg literal not in #()"
+      end
+      unless ret = argsyms[n]
+        ret = garg(n)
+        Thread.current[:arg_env] = argsyms.assoc(n, ret)
+      end
+      ret
+    end
+
+    def read_arg(io, pct)
+      unless Thread.current[:arg_env]
+        return interpretToken(read_token(io, '%'))
+      end
+      char = io.getc
+      io.backc
+
+      # % alone is first arg
+      if whitespace?(char) || terminating_macro?(char)
+        return register_arg(1)
+      end
+      n = read(io)
+      if n == AMP
+        return register_arg(-1)
+      elsif Integer === n
+        register_arg(n)
+      else
+        raise ArgumentError, "arg literal must be %, %& or %integer"
+      end
+    end
+
+
   end
 end

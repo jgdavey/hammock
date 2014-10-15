@@ -135,7 +135,9 @@ module Hammock
     end
 
     def self.assoc(sequence, key, val)
-      sequence.assoc(key, val)
+      if sequence
+        sequence.assoc(key, val)
+      end
     end
 
     def self.first(sequence)
