@@ -143,11 +143,6 @@ module Hammock
       self
     end
 
-    def inspect
-      "(#{self.map(&:inspect).join(' ')})"
-    end
-    alias to_s inspect
-
     def respond_to?(name, include_private = false)
       super || CADR === name.to_s
     end

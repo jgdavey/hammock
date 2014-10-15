@@ -1,17 +1,17 @@
-require 'hammock/cons_cell'
+require 'hammock/sequence'
 
-describe Hammock::ConsCell do
+describe Hammock::Sequence do
   describe '::from_array' do
     it 'when empty is empty' do
       empty = described_class.from_array([])
-      expect(empty).to be_a Hammock::EmptyList
+      expect(empty).to eq(Hammock::EmptyList)
       expect(empty.count).to eq(0)
       expect(empty.to_a).to eq([])
     end
 
     it 'turns array of one into list of one' do
       list = described_class.from_array([1])
-      expect(list).to be_a Hammock::ConsCell
+      expect(list).to be_a Hammock::Sequence
       expect(list.to_a).to eq([1])
     end
 

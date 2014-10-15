@@ -127,7 +127,7 @@ module Hammock
       if s
         s.cons(val)
       else
-        Sequence.new(val, nil)
+        Sequence.new(val)
       end
     end
 
@@ -150,35 +150,37 @@ module Hammock
     def self.second(sequence)
       if coll = seq(sequence)
         if coll = coll.cdr
-          coll.car
+          coll.car unless coll.empty?
         end
       end
     end
 
     def self.next(sequence)
       if coll = seq(sequence)
-        coll.cdr
+        t = coll.tail
+        t unless t.empty?
       end
     end
 
     def self.more(sequence)
       if coll = seq(sequence)
-        coll.cdr || EmptyList
+        coll.tail
       else
         EmptyList
       end
     end
 
     def self.seq(sequence)
-      return nil if sequence.nil? || sequence.empty?
-      case sequence
-      when Hammock::List
-        sequence
-      else
-        if sequence.respond_to?(:to_a)
-          Sequence.from_array sequence.to_a
-        end
-      end
+      return nil if sequence.nil? || EmptyList == sequence
+      list = case sequence
+             when Hammock::List
+               sequence
+             else
+               if sequence.respond_to?(:to_a)
+                 Sequence.from_array sequence.to_a
+               end
+             end
+      list unless list.empty?
     end
 
     def self.seq?(sequence)

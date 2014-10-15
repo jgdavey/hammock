@@ -1,3 +1,4 @@
+require 'hammock/meta'
 require 'hammock/list'
 
 module Hammock
@@ -8,7 +9,8 @@ module Hammock
     attr_reader :head, :tail
 
     def self.from_array(array)
-      array.to_a.reverse.reduce(Hammock::EmptyList) do |prev, el|
+      return EmptyList if array.nil? || array.empty?
+      array.to_a.reverse.inject(EmptyList) do |prev, el|
         new(el, prev)
       end
     end
@@ -38,7 +40,15 @@ module Hammock
 
     def evaluate(env)
       ListEvaluator.evaluate(env, self)
+    rescue
+      require 'pry'; binding.pry
     end
+
+    def inspect
+      "(#{to_a.map(&:inspect).join(' ')})"
+    end
+    alias to_s inspect
+
 
     def empty?
       false

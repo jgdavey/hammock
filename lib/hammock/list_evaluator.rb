@@ -38,7 +38,7 @@ module Hammock
       else
         args = NEW
       end
-      ConsCell.from_array [DOT, klass, args]
+      Sequence.from_array [DOT, klass, args]
     end
 
     def macroexpand1(env, form)

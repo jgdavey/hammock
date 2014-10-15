@@ -1,9 +1,9 @@
 require 'delegate'
 require 'hammock/meta'
-require 'hammock/cons_cell'
 require 'hammock/map'
 require 'hammock/rt'
 require 'hammock/set'
+require 'hammock/sequence'
 require 'hammock/symbol'
 require 'hammock/token'
 require 'hammock/vector'
@@ -405,7 +405,7 @@ module Hammock
           ret = RT.list(APPLY, HASHSET, RT.list(SEQ, RT.cons(CONCAT, syntax_quote_expand_list(form))))
         elsif Vector === form
           ret = RT.list(APPLY, VECTOR, RT.list(SEQ, RT.cons(CONCAT, syntax_quote_expand_list(form))))
-        elsif ConsCell === form
+        elsif Hammock::List === form
           seq = RT.seq(form)
           if seq
             ret = RT.list(SEQ, RT.cons(CONCAT, syntax_quote_expand_list(seq)))
@@ -423,17 +423,17 @@ module Hammock
 
 
     def unquote?(form)
-      UNQUOTE == RT.first(form)
+      Hammock::List === form && (UNQUOTE == RT.first(form))
     end
 
     def unquote_splicing?(form)
-      UNQUOTE_SPLICING == RT.first(form)
+      Hammock::List === form && (UNQUOTE_SPLICING == RT.first(form))
     end
 
     def syntax_quote_expand_list(seq)
       ret = Vector.new
       seq = RT.seq(seq)
-      while seq
+      while !seq.empty?
         item = seq.first
         if unquote?(item)
           ret = ret.cons(RT.list(LIST, RT.second(item)))
@@ -448,7 +448,7 @@ module Hammock
     end
 
     def read_var(io, quote_mark)
-      Hammock::Sequence.new THE_VAR, read(io)
+      Hammock::Sequence.from_array [THE_VAR, read(io)]
     end
 
     def read_function(io, paren)

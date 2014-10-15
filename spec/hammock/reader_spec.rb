@@ -152,7 +152,7 @@ describe Hammock::Reader do
   it "reads symbols with ticks too" do
     str = "(map' foo)"
     result = read_string str
-    expect(result).to eq Hammock::ConsCell.from_array [
+    expect(result).to eq Hammock::Sequence.from_array [
       Hammock::Symbol.intern("map'"),
       Hammock::Symbol.intern("foo")]
   end
