@@ -42,7 +42,7 @@ module Hammock
     end
 
     def macroexpand1(env, form)
-      return form, false unless form
+      return form, false unless form.is_a?(List)
       sym = form.car
       if Hammock::Symbol === sym
         if sym.name.start_with?(DOT.name)
@@ -67,7 +67,7 @@ module Hammock
     end
 
     def special(form)
-      return unless form
+      return unless form.is_a?(List)
       RT.special(form.car)
     end
 
@@ -90,7 +90,9 @@ module Hammock
         list = macroexpand(env, list)
       end
 
-      return unless list
+      unless list.is_a?(List)
+        return list
+      end
 
       if s = special(list)
         return s.call(list, env, *list.cdr)
@@ -106,17 +108,17 @@ module Hammock
 
       case fn
       when Function
-        args = (list.cdr || []).map { |elem| elem.evaluate(env) }
+        args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
         fn.call list, env, *args
       when ::Symbol
-        args = (list.cdr || []).map { |elem| elem.evaluate(env) }
+        args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
         if args.count > 2
           raise ArgumentError, "more than one arg passed as argument to Keyword #{fn}"
         end
         map, default = *args
         map.fetch(fn, default) if map
       when Map, Vector
-        args = (list.cdr || []).map { |elem| elem.evaluate(env) }
+        args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
         if args.count > 2
           raise ArgumentError, "more than one arg passed as argument to Map"
         end

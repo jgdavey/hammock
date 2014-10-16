@@ -38,6 +38,10 @@ module Hammock
       first == other.first && tail == other.tail
     end
 
+    def seq
+      self
+    end
+
     def evaluate(env)
       ListEvaluator.evaluate(env, self)
     rescue

@@ -8,6 +8,7 @@ require 'hammock/loop_locals'
 require 'hammock/recur_locals'
 require 'hammock/stream'
 require 'hammock/sequence'
+require 'hammock/lazy_sequence'
 require 'hammock/var'
 require 'hammock/vector'
 require 'hammock/function'
@@ -171,16 +172,17 @@ module Hammock
     end
 
     def self.seq(sequence)
-      return nil if sequence.nil? || EmptyList == sequence
-      list = case sequence
-             when Hammock::List
-               sequence
-             else
-               if sequence.respond_to?(:to_a)
-                 Sequence.from_array sequence.to_a
-               end
-             end
-      list unless list.empty?
+      case sequence
+      when NilClass
+        nil
+      when Hammock::List
+        sequence.seq
+      else
+        if sequence.respond_to?(:to_a)
+          list = Sequence.from_array sequence.to_a
+          list unless list.empty?
+        end
+      end
     end
 
     def self.seq?(sequence)
@@ -296,7 +298,7 @@ module Hammock
           bodies = RT.list(bodies)
         end
 
-        arities = bodies.map do |body|
+        arities = bodies.to_a.map do |body|
           bindings, *body = *body
           unless Vector === bindings
             raise "Function declarations must begin with a binding form"
@@ -355,13 +357,13 @@ module Hammock
           *first, last = *args
           args = first + last.to_a
         end
-        Sequence.from_array(args.map {|arg| arg.evaluate(env)})
+        Sequence.from_array(args.to_a.map {|arg| arg.evaluate(env)})
       end
     end
 
     class Recur
       def call(_, env, *args)
-        args = args.map {|arg| arg.evaluate(env)}
+        args = args.to_a.map {|arg| arg.evaluate(env)}
         RecurLocals.new(args)
       end
     end
@@ -379,7 +381,7 @@ module Hammock
 
         if Sequence === args.first
           method, *arguments = *args.first
-          arguments = arguments.map {|arg| arg.evaluate(env)}
+          arguments = arguments.to_a.map {|arg| arg.evaluate(env)}
         end
         target.evaluate(env).send(method.name, *arguments)
       end

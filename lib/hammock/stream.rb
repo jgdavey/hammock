@@ -7,7 +7,7 @@ module Hammock
     include List
     include Meta
 
-    def initialize(meta=nil,&block)
+    def initialize(meta=nil, &block)
       @meta = meta
       @block = block
       @lock = Mutex.new

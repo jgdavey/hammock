@@ -605,14 +605,14 @@
  [obj f & args]
   (with-meta obj (apply f (meta obj) args)))
 
-; (defmacro lazy-seq
-;   "Takes a body of expressions that returns an ISeq or nil, and yields
-;   a Seqable object that will invoke the body only the first time seq
-;   is called, and will cache the result and return it on all subsequent
-;   seq calls. See also - realized?"
-;   {:added "1.0"}
-;   [& body]
-;   (list 'new 'clojure.lang.LazySeq (list* '^{:once true} fn* [] body)))
+(defmacro lazy-seq
+  "Takes a body of expressions that returns an ISeq or nil, and yields
+  a Seqable object that will invoke the body only the first time seq
+  is called, and will cache the result and return it on all subsequent
+  seq calls. See also - realized?"
+  {:added "1.0"}
+  [& body]
+  (list '.new 'Hammock.LazySequence nil (list* '^{:once true} fn* [] body)))
 
 ; (defn ^:static ^clojure.lang.ChunkBuffer chunk-buffer ^clojure.lang.ChunkBuffer [capacity]
 ;   (clojure.lang.ChunkBuffer. capacity))
@@ -640,48 +640,35 @@
 ; (defn ^:static chunked-seq? [s]
 ;   (instance? clojure.lang.IChunkedSeq s))
 
-; (defn concat
-;   "Returns a lazy seq representing the concatenation of the elements in the supplied colls."
-;   {:added "1.0"
-;    :static true}
-;   ([] (lazy-seq nil))
-;   ([x] (lazy-seq x))
-;   ([x y]
-;     (lazy-seq
-;       (let [s (seq x)]
-;         (if s
-;           (if (chunked-seq? s)
-;             (chunk-cons (chunk-first s) (concat (chunk-rest s) y))
-;             (cons (first s) (concat (rest s) y)))
-;           y))))
-;   ([x y & zs]
-;      (let [cat (fn cat [xys zs]
-;                  (lazy-seq
-;                    (let [xys (seq xys)]
-;                      (if xys
-;                        (if (chunked-seq? xys)
-;                          (chunk-cons (chunk-first xys)
-;                                      (cat (chunk-rest xys) zs))
-;                          (cons (first xys) (cat (rest xys) zs)))
-;                        (when zs
-;                          (cat (first zs) (next zs)))))))]
-;        (cat (concat x y) zs))))
+; TODO Chunked sequences
+(defn ^:static chunked-seq? [s]
+  false)
 
-;; TODO lazy-seq version
 (defn concat
-  ([] (list))
-  ([x] (list x))
-  ([x y] (let [s (seq x)]
-           (if s
-             (cons (first s) (concat (rest s) y))
-             y)))
+  "Returns a lazy seq representing the concatenation of the elements in the supplied colls."
+  {:added "1.0"
+   :static true}
+  ([] (lazy-seq nil))
+  ([x] (lazy-seq x))
+  ([x y]
+    (lazy-seq
+      (let [s (seq x)]
+        (if s
+          (if (chunked-seq? s)
+            (chunk-cons (chunk-first s) (concat (chunk-rest s) y))
+            (cons (first s) (concat (rest s) y)))
+          y))))
   ([x y & zs]
      (let [cat (fn cat [xys zs]
-                 (let [xys (seq xys)]
-                   (if xys
-                     (cons (first xys) (cat (rest xys) zs))
-                     (when zs
-                       (cat (first zs) (next zs))))))]
+                 (lazy-seq
+                   (let [xys (seq xys)]
+                     (if xys
+                       (if (chunked-seq? xys)
+                         (chunk-cons (chunk-first xys)
+                                     (cat (chunk-rest xys) zs))
+                         (cons (first xys) (cat (rest xys) zs)))
+                       (when zs
+                         (cat (first zs) (next zs)))))))]
        (cat (concat x y) zs))))
 
 ; ;;;;;;;;;;;;;;;;at this point all the support for syntax-quote exists;;;;;;;;;;;;;;;;;;;;;;
@@ -825,7 +812,7 @@
   "Returns a number one greater than num. Does not auto-promote
   longs, will throw on overflow. See also: inc'"
   {:added "1.2"}
-  [x] (.+ 1 x))
+  [x] (.+ x 1))
 
 (def inc' inc)
 
@@ -2477,54 +2464,48 @@
            ~@body
            (recur (inc ~i)))))))
 
-; (defn map
-;   "Returns a lazy sequence consisting of the result of applying f to
-;   the set of first items of each coll, followed by applying f to the
-;   set of second items in each coll, until any one of the colls is
-;   exhausted.  Any remaining items in other colls are ignored. Function
-;   f should accept number-of-colls arguments. Returns a transducer when
-;   no collection is provided."
-;   {:added "1.0"
-;    :static true}
-;   ([f]
-;     (fn [f1]
-;       (fn
-;         ([] (f1))
-;         ([result] (f1 result))
-;         ([result input]
-;            (f1 result (f input)))
-;         ([result input & inputs]
-;            (f1 result (apply f input inputs))))))
-;   ([f coll]
-;    (lazy-seq
-;     (when-let [s (seq coll)]
-;       (if (chunked-seq? s)
-;         (let [c (chunk-first s)
-;               size (int (count c))
-;               b (chunk-buffer size)]
-;           (dotimes [i size]
-;               (chunk-append b (f (.nth c i))))
-;           (chunk-cons (chunk b) (map f (chunk-rest s))))
-;         (cons (f (first s)) (map f (rest s)))))))
-;   ([f c1 c2]
-;    (lazy-seq
-;     (let [s1 (seq c1) s2 (seq c2)]
-;       (when (and s1 s2)
-;         (cons (f (first s1) (first s2))
-;               (map f (rest s1) (rest s2)))))))
-;   ([f c1 c2 c3]
-;    (lazy-seq
-;     (let [s1 (seq c1) s2 (seq c2) s3 (seq c3)]
-;       (when (and  s1 s2 s3)
-;         (cons (f (first s1) (first s2) (first s3))
-;               (map f (rest s1) (rest s2) (rest s3)))))))
-;   ([f c1 c2 c3 & colls]
-;    (let [step (fn step [cs]
-;                  (lazy-seq
-;                   (let [ss (map seq cs)]
-;                     (when (every? identity ss)
-;                       (cons (map first ss) (step (map rest ss)))))))]
-;      (map #(apply f %) (step (conj colls c3 c2 c1))))))
+(defn map
+  "Returns a lazy sequence consisting of the result of applying f to
+  the set of first items of each coll, followed by applying f to the
+  set of second items in each coll, until any one of the colls is
+  exhausted.  Any remaining items in other colls are ignored. Function
+  f should accept number-of-colls arguments. Returns a transducer when
+  no collection is provided."
+  {:added "1.0"
+   :static true}
+  ; ([f]
+  ;   (fn [f1]
+  ;     (fn
+  ;       ([] (f1))
+  ;       ([result] (f1 result))
+  ;       ([result input]
+  ;          (f1 result (f input)))
+  ;       ([result input & inputs]
+  ;          (f1 result (apply f input inputs))))))
+  ([f coll]
+   (lazy-seq
+     (let [s (seq coll)]
+       (when s
+         (cons (f (first s)) (map f (rest s)))))))
+  ([f c1 c2]
+   (lazy-seq
+    (let [s1 (seq c1) s2 (seq c2)]
+      (when (and s1 s2)
+        (cons (f (first s1) (first s2))
+              (map f (rest s1) (rest s2)))))))
+  ([f c1 c2 c3]
+   (lazy-seq
+    (let [s1 (seq c1) s2 (seq c2) s3 (seq c3)]
+      (when (and  s1 s2 s3)
+        (cons (f (first s1) (first s2) (first s3))
+              (map f (rest s1) (rest s2) (rest s3)))))))
+  ([f c1 c2 c3 & colls]
+   (let [step (fn step [cs]
+                 (lazy-seq
+                  (let [ss (map seq cs)]
+                    (when (every? identity ss)
+                      (cons (map first ss) (step (map rest ss)))))))]
+     (map #(apply f %) (step (conj colls c3 c2 c1))))))
 
 ; (defmacro declare
 ;   "defs the supplied var names with no bindings, useful for making forward declarations."

@@ -176,6 +176,10 @@ module Hammock
         self
       end
 
+      def seq
+        nil
+      end
+
       def empty?
         true
       end
