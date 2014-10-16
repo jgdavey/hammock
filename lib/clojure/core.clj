@@ -2507,64 +2507,64 @@
                       (cons (map first ss) (step (map rest ss)))))))]
      (map #(apply f %) (step (conj colls c3 c2 c1))))))
 
-; (defmacro declare
-;   "defs the supplied var names with no bindings, useful for making forward declarations."
-;   {:added "1.0"}
-;   [& names] `(do ~@(map #(list 'def (vary-meta % assoc :declared true)) names)))
+(defmacro declare
+  "defs the supplied var names with no bindings, useful for making forward declarations."
+  {:added "1.0"}
+  [& names] `(do ~@(map #(list 'def (vary-meta % assoc :declared true)) names)))
 
-; (declare cat)
+(declare cat)
 
-; (defn mapcat
-;   "Returns the result of applying concat to the result of applying map
-;   to f and colls.  Thus function f should return a collection. Returns
-;   a transducer when no collections are provided"
-;   {:added "1.0"
-;    :static true}
-;   ([f] (comp (map f) cat))
-;   ([f & colls]
-;      (apply concat (apply map f colls))))
+(defn mapcat
+  "Returns the result of applying concat to the result of applying map
+  to f and colls.  Thus function f should return a collection. Returns
+  a transducer when no collections are provided"
+  {:added "1.0"
+   :static true}
+  ; ([f] (comp (map f) cat))
+  ([f & colls]
+     (apply concat (apply map f colls))))
 
-; (defn filter
-;   "Returns a lazy sequence of the items in coll for which
-;   (pred item) returns true. pred must be free of side-effects.
-;   Returns a transducer when no collection is provided."
-;   {:added "1.0"
-;    :static true}
-;   ([pred]
-;     (fn [f1]
-;       (fn
-;         ([] (f1))
-;         ([result] (f1 result))
-;         ([result input]
-;            (if (pred input)
-;              (f1 result input)
-;              result)))))
-;   ([pred coll]
-;    (lazy-seq
-;     (when-let [s (seq coll)]
-;       (if (chunked-seq? s)
-;         (let [c (chunk-first s)
-;               size (count c)
-;               b (chunk-buffer size)]
-;           (dotimes [i size]
-;               (when (pred (.nth c i))
-;                 (chunk-append b (.nth c i))))
-;           (chunk-cons (chunk b) (filter pred (chunk-rest s))))
-;         (let [f (first s) r (rest s)]
-;           (if (pred f)
-;             (cons f (filter pred r))
-;             (filter pred r))))))))
+(defn filter
+  "Returns a lazy sequence of the items in coll for which
+  (pred item) returns true. pred must be free of side-effects.
+  Returns a transducer when no collection is provided."
+  {:added "1.0"
+   :static true}
+  ; ([pred]
+  ;   (fn [f1]
+  ;     (fn
+  ;       ([] (f1))
+  ;       ([result] (f1 result))
+  ;       ([result input]
+  ;          (if (pred input)
+  ;            (f1 result input)
+  ;            result)))))
+  ([pred coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (if (chunked-seq? s)
+        (let [c (chunk-first s)
+              size (count c)
+              b (chunk-buffer size)]
+          (dotimes [i size]
+              (when (pred (.nth c i))
+                (chunk-append b (.nth c i))))
+          (chunk-cons (chunk b) (filter pred (chunk-rest s))))
+        (let [f (first s) r (rest s)]
+          (if (pred f)
+            (cons f (filter pred r))
+            (filter pred r))))))))
 
 
-; (defn remove
-;   "Returns a lazy sequence of the items in coll for which
-;   (pred item) returns false. pred must be free of side-effects.
-;   Returns a transducer when no collection is provided."
-;   {:added "1.0"
-;    :static true}
-;   ([pred] (filter (complement pred)))
-;   ([pred coll]
-;      (filter (complement pred) coll)))
+(defn remove
+  "Returns a lazy sequence of the items in coll for which
+  (pred item) returns false. pred must be free of side-effects.
+  Returns a transducer when no collection is provided."
+  {:added "1.0"
+   :static true}
+  ; ([pred] (filter (complement pred)))
+  ([pred coll]
+     (filter (complement pred) coll)))
 
 ; (defn reduced
 ;   "Wraps x in a way such that a reduce will terminate with the value x"
@@ -2579,12 +2579,12 @@
 ;    :added "1.5"}
 ;   ([x] (clojure.lang.RT/isReduced x)))
 
-; (defn take
-;   "Returns a lazy sequence of the first n items in coll, or all items if
-;   there are fewer than n.  Returns a stateful transducer when
-;   no collection is provided."
-;   {:added "1.0"
-;    :static true}
+(defn take
+  "Returns a lazy sequence of the first n items in coll, or all items if
+  there are fewer than n.  Returns a stateful transducer when
+  no collection is provided."
+  {:added "1.0"
+   :static true}
 ;   ([n]
 ;      (fn [f1]
 ;        (let [nv (volatile! n)]
@@ -2600,144 +2600,138 @@
 ;                 (if (not (pos? nn))
 ;                   (reduced result)
 ;                   result)))))))
-;   ([n coll]
-;      (lazy-seq
-;       (when (pos? n)
-;         (when-let [s (seq coll)]
-;           (cons (first s) (take (dec n) (rest s))))))))
+  ([n coll]
+     (lazy-seq
+      (when (pos? n)
+        (let [s (seq coll)]
+          (when s
+          (cons (first s) (take (dec n) (rest s)))))))))
 
-; (defn take-while
-;   "Returns a lazy sequence of successive items from coll while
-;   (pred item) returns true. pred must be free of side-effects.
-;   Returns a transducer when no collection is provided."
-;   {:added "1.0"
-;    :static true}
-;   ([pred]
-;      (fn [f1]
-;        (fn
-;          ([] (f1))
-;          ([result] (f1 result))
-;          ([result input]
-;             (if (pred input)
-;               (f1 result input)
-;               (reduced result))))))
-;   ([pred coll]
-;      (lazy-seq
-;       (when-let [s (seq coll)]
-;         (when (pred (first s))
-;           (cons (first s) (take-while pred (rest s))))))))
+(defn take-while
+  "Returns a lazy sequence of successive items from coll while
+  (pred item) returns true. pred must be free of side-effects.
+  Returns a transducer when no collection is provided."
+  {:added "1.0"
+   :static true}
+  ; ([pred]
+  ;    (fn [f1]
+  ;      (fn
+  ;        ([] (f1))
+  ;        ([result] (f1 result))
+  ;        ([result input]
+  ;           (if (pred input)
+  ;             (f1 result input)
+  ;             (reduced result))))))
+  ([pred coll]
+     (lazy-seq
+      (let [s (seq coll)]
+        (when (and s (pred (first s)))
+          (cons (first s) (take-while pred (rest s))))))))
 
-; (defn drop
-;   "Returns a lazy sequence of all but the first n items in coll.
-;   Returns a stateful transducer when no collection is provided."
-;   {:added "1.0"
-;    :static true}
-;   ([n]
-;      (fn [f1]
-;        (let [nv (volatile! n)]
-;          (fn
-;            ([] (f1))
-;            ([result] (f1 result))
-;            ([result input]
-;               (let [n @nv]
-;                 (vswap! nv dec)
-;                 (if (pos? n)
-;                   result
-;                   (f1 result input))))))))
-;   ([n coll]
-;      (let [step (fn [n coll]
-;                   (let [s (seq coll)]
-;                     (if (and (pos? n) s)
-;                       (recur (dec n) (rest s))
-;                       s)))]
-;        (lazy-seq (step n coll)))))
+(defn drop
+  "Returns a lazy sequence of all but the first n items in coll.
+  Returns a stateful transducer when no collection is provided."
+  {:added "1.0"
+   :static true}
+  ; ([n]
+  ;    (fn [f1]
+  ;      (let [nv (volatile! n)]
+  ;        (fn
+  ;          ([] (f1))
+  ;          ([result] (f1 result))
+  ;          ([result input]
+  ;             (let [n @nv]
+  ;               (vswap! nv dec)
+  ;               (if (pos? n)
+  ;                 result
+  ;                 (f1 result input))))))))
+  ([n coll]
+     (let [step (fn [n coll]
+                  (let [s (seq coll)]
+                    (if (and (pos? n) s)
+                      (recur (dec n) (rest s))
+                      s)))]
+       (lazy-seq (step n coll)))))
 
-; (defn drop-last
-;   "Return a lazy sequence of all but the last n (default 1) items in coll"
-;   {:added "1.0"
-;    :static true}
-;   ([s] (drop-last 1 s))
-;   ([n s] (map (fn [x _] x) s (drop n s))))
+(defn drop-last
+  "Return a lazy sequence of all but the last n (default 1) items in coll"
+  {:added "1.0"
+   :static true}
+  ([s] (drop-last 1 s))
+  ([n s] (map (fn [x _] x) s (drop n s))))
 
-; (defn take-last
-;   "Returns a seq of the last n items in coll.  Depending on the type
-;   of coll may be no better than linear time.  For vectors, see also subvec."
-;   {:added "1.1"
-;    :static true}
-;   [n coll]
-;   (loop [s (seq coll), lead (seq (drop n coll))]
-;     (if lead
-;       (recur (next s) (next lead))
-;       s)))
+(defn take-last
+  "Returns a seq of the last n items in coll.  Depending on the type
+  of coll may be no better than linear time.  For vectors, see also subvec."
+  {:added "1.1"
+   :static true}
+  [n coll]
+  (loop [s (seq coll), lead (seq (drop n coll))]
+    (if lead
+      (recur (next s) (next lead))
+      s)))
 
-; (defn drop-while
-;   "Returns a lazy sequence of the items in coll starting from the
-;   first item for which (pred item) returns logical false.  Returns a
-;   stateful transducer when no collection is provided."
-;   {:added "1.0"
-;    :static true}
-;   ([pred]
-;      (fn [f1]
-;        (let [dv (volatile! true)]
-;          (fn
-;            ([] (f1))
-;            ([result] (f1 result))
-;            ([result input]
-;               (let [drop? @dv]
-;                 (if (and drop? (pred input))
-;                   result
-;                   (do
-;                     (vreset! dv nil)
-;                     (f1 result input)))))))))
-;   ([pred coll]
-;      (let [step (fn [pred coll]
-;                   (let [s (seq coll)]
-;                     (if (and s (pred (first s)))
-;                       (recur pred (rest s))
-;                       s)))]
-;        (lazy-seq (step pred coll)))))
+(defn drop-while
+  "Returns a lazy sequence of the items in coll starting from the
+  first item for which (pred item) returns logical false.  Returns a
+  stateful transducer when no collection is provided."
+  {:added "1.0"
+   :static true}
+  ; ([pred]
+  ;    (fn [f1]
+  ;      (let [dv (volatile! true)]
+  ;        (fn
+  ;          ([] (f1))
+  ;          ([result] (f1 result))
+  ;          ([result input]
+  ;             (let [drop? @dv]
+  ;               (if (and drop? (pred input))
+  ;                 result
+  ;                 (do
+  ;                   (vreset! dv nil)
+  ;                   (f1 result input)))))))))
+  ([pred coll]
+     (let [step (fn [pred coll]
+                  (let [s (seq coll)]
+                    (if (and s (pred (first s)))
+                      (recur pred (rest s))
+                      s)))]
+       (lazy-seq (step pred coll)))))
 
-; (defn cycle
-;   "Returns a lazy (infinite!) sequence of repetitions of the items in coll."
-;   {:added "1.0"
-;    :static true}
-;   [coll] (lazy-seq
-;           (when-let [s (seq coll)]
-;               (concat s (cycle s)))))
+(defn cycle
+  "Returns a lazy (infinite!) sequence of repetitions of the items in coll."
+  {:added "1.0"
+   :static true}
+  [coll] (lazy-seq
+          (let [s (seq coll)]
+            (when s (concat s (cycle s))))))
 
-; (defn split-at
-;   "Returns a vector of [(take n coll) (drop n coll)]"
-;   {:added "1.0"
-;    :static true}
-;   [n coll]
-;     [(take n coll) (drop n coll)])
+(defn split-at
+  "Returns a vector of [(take n coll) (drop n coll)]"
+  {:added "1.0"
+   :static true}
+  [n coll]
+    [(take n coll) (drop n coll)])
 
-; (defn split-with
-;   "Returns a vector of [(take-while pred coll) (drop-while pred coll)]"
-;   {:added "1.0"
-;    :static true}
-;   [pred coll]
-;     [(take-while pred coll) (drop-while pred coll)])
+(defn split-with
+  "Returns a vector of [(take-while pred coll) (drop-while pred coll)]"
+  {:added "1.0"
+   :static true}
+  [pred coll]
+    [(take-while pred coll) (drop-while pred coll)])
 
-; (defn repeat
-;   "Returns a lazy (infinite!, or length n if supplied) sequence of xs."
-;   {:added "1.0"
-;    :static true}
-;   ([x] (lazy-seq (cons x (repeat x))))
-;   ([n x] (take n (repeat x))))
+(defn repeat
+  "Returns a lazy (infinite!, or length n if supplied) sequence of xs."
+  {:added "1.0"
+   :static true}
+  ([x] (lazy-seq (cons x (repeat x))))
+  ([n x] (take n (repeat x))))
 
-; (defn replicate
-;   "DEPRECATED: Use 'repeat' instead.
-;    Returns a lazy seq of n xs."
-;   {:added "1.0"
-;    :deprecated "1.3"}
-;   [n x] (take n (repeat x)))
-
-; (defn iterate
-;   "Returns a lazy sequence of x, (f x), (f (f x)) etc. f must be free of side-effects"
-;   {:added "1.0"
-;    :static true}
-;   [f x] (cons x (lazy-seq (iterate f (f x)))))
+(defn iterate
+  "Returns a lazy sequence of x, (f x), (f (f x)) etc. f must be free of side-effects"
+  {:added "1.0"
+   :static true}
+  [f x] (cons x (lazy-seq (iterate f (f x)))))
 
 ; (defn range
 ;   "Returns a lazy seq of nums from start (inclusive) to end
@@ -2746,7 +2740,7 @@
 ;   start. When start is equal to end, returns empty list."
 ;   {:added "1.0"
 ;    :static true}
-;   ([] (range 0 Double/POSITIVE_INFINITY 1))
+;   ([] (range 0 Float.INFINITY 1))
 ;   ([end] (range 0 end 1))
 ;   ([start end] (range start end 1))
 ;   ([start end step]
@@ -2765,15 +2759,15 @@
 ;                       (when (comp i end)
 ;                         (range i end step)))))))))
 
-; (defn merge
-;   "Returns a map that consists of the rest of the maps conj-ed onto
-;   the first.  If a key occurs in more than one map, the mapping from
-;   the latter (left-to-right) will be the mapping in the result."
-;   {:added "1.0"
-;    :static true}
-;   [& maps]
-;   (when (some identity maps)
-;     (reduce1 #(conj (or %1 {}) %2) maps)))
+(defn merge
+  "Returns a map that consists of the rest of the maps conj-ed onto
+  the first.  If a key occurs in more than one map, the mapping from
+  the latter (left-to-right) will be the mapping in the result."
+  {:added "1.0"
+   :static true}
+  [& maps]
+  (when (some identity maps)
+    (reduce1 #(conj (or %1 {}) %2) maps)))
 
 ; (defn merge-with
 ;   "Returns a map that consists of the rest of the maps conj-ed onto
@@ -2794,20 +2788,19 @@
 ;       (reduce1 merge2 maps))))
 
 
-
-; (defn zipmap
-;   "Returns a map with the keys mapped to the corresponding vals."
-;   {:added "1.0"
-;    :static true}
-;   [keys vals]
-;     (loop [map {}
-;            ks (seq keys)
-;            vs (seq vals)]
-;       (if (and ks vs)
-;         (recur (assoc map (first ks) (first vs))
-;                (next ks)
-;                (next vs))
-;         map)))
+(defn zipmap
+  "Returns a map with the keys mapped to the corresponding vals."
+  {:added "1.0"
+   :static true}
+  [keys vals]
+    (loop [map {}
+           ks (seq keys)
+           vs (seq vals)]
+      (if (and ks vs)
+        (recur (assoc map (first ks) (first vs))
+               (next ks)
+               (next vs))
+        map)))
 
 ; (defn line-seq
 ;   "Returns the lines of text from rdr as a lazy sequence of strings.
@@ -2855,80 +2848,82 @@
 ;   ([keyfn ^java.util.Comparator comp coll]
 ;    (sort (fn [x y] (. comp (compare (keyfn x) (keyfn y)))) coll)))
 
-; (defn dorun
-;   "When lazy sequences are produced via functions that have side
-;   effects, any effects other than those needed to produce the first
-;   element in the seq do not occur until the seq is consumed. dorun can
-;   be used to force any effects. Walks through the successive nexts of
-;   the seq, does not retain the head and returns nil."
-;   {:added "1.0"
-;    :static true}
-;   ([coll]
-;    (when (seq coll)
-;      (recur (next coll))))
-;   ([n coll]
-;    (when (and (seq coll) (pos? n))
-;      (recur (dec n) (next coll)))))
+(defn dorun
+  "When lazy sequences are produced via functions that have side
+  effects, any effects other than those needed to produce the first
+  element in the seq do not occur until the seq is consumed. dorun can
+  be used to force any effects. Walks through the successive nexts of
+  the seq, does not retain the head and returns nil."
+  {:added "1.0"
+   :static true}
+  ([coll]
+   (when (seq coll)
+     (recur (next coll))))
+  ([n coll]
+   (when (and (seq coll) (pos? n))
+     (recur (dec n) (next coll)))))
 
-; (defn doall
-;   "When lazy sequences are produced via functions that have side
-;   effects, any effects other than those needed to produce the first
-;   element in the seq do not occur until the seq is consumed. doall can
-;   be used to force any effects. Walks through the successive nexts of
-;   the seq, retains the head and returns it, thus causing the entire
-;   seq to reside in memory at one time."
-;   {:added "1.0"
-;    :static true}
-;   ([coll]
-;    (dorun coll)
-;    coll)
-;   ([n coll]
-;    (dorun n coll)
-;    coll))
+(defn doall
+  "When lazy sequences are produced via functions that have side
+  effects, any effects other than those needed to produce the first
+  element in the seq do not occur until the seq is consumed. doall can
+  be used to force any effects. Walks through the successive nexts of
+  the seq, retains the head and returns it, thus causing the entire
+  seq to reside in memory at one time."
+  {:added "1.0"
+   :static true}
+  ([coll]
+   (dorun coll)
+   coll)
+  ([n coll]
+   (dorun n coll)
+   coll))
 
-; (defn nthnext
-;   "Returns the nth next of coll, (seq coll) when n is 0."
-;   {:added "1.0"
-;    :static true}
-;   [coll n]
-;     (loop [n n xs (seq coll)]
-;       (if (and xs (pos? n))
-;         (recur (dec n) (next xs))
-;         xs)))
+(defn nthnext
+  "Returns the nth next of coll, (seq coll) when n is 0."
+  {:added "1.0"
+   :static true}
+  [coll n]
+    (loop [n n xs (seq coll)]
+      (if (and xs (pos? n))
+        (recur (dec n) (next xs))
+        xs)))
 
-; (defn nthrest
-;   "Returns the nth rest of coll, coll when n is 0."
-;   {:added "1.3"
-;    :static true}
-;   [coll n]
-;     (loop [n n xs coll]
-;       (if (and (pos? n) (seq xs))
-;         (recur (dec n) (rest xs))
-;         xs)))
+(defn nthrest
+  "Returns the nth rest of coll, coll when n is 0."
+  {:added "1.3"
+   :static true}
+  [coll n]
+    (loop [n n xs coll]
+      (if (and (pos? n) (seq xs))
+        (recur (dec n) (rest xs))
+        xs)))
 
-; (defn partition
-;   "Returns a lazy sequence of lists of n items each, at offsets step
-;   apart. If step is not supplied, defaults to n, i.e. the partitions
-;   do not overlap. If a pad collection is supplied, use its elements as
-;   necessary to complete last partition upto n items. In case there are
-;   not enough padding elements, return a partition with less than n items."
-;   {:added "1.0"
-;    :static true}
-;   ([n coll]
-;      (partition n n coll))
-;   ([n step coll]
-;      (lazy-seq
-;        (when-let [s (seq coll)]
-;          (let [p (doall (take n s))]
-;            (when (= n (count p))
-;              (cons p (partition n step (nthrest s step))))))))
-;   ([n step pad coll]
-;      (lazy-seq
-;        (when-let [s (seq coll)]
-;          (let [p (doall (take n s))]
-;            (if (= n (count p))
-;              (cons p (partition n step pad (nthrest s step)))
-;              (list (take n (concat p pad)))))))))
+(defn partition
+  "Returns a lazy sequence of lists of n items each, at offsets step
+  apart. If step is not supplied, defaults to n, i.e. the partitions
+  do not overlap. If a pad collection is supplied, use its elements as
+  necessary to complete last partition upto n items. In case there are
+  not enough padding elements, return a partition with less than n items."
+  {:added "1.0"
+   :static true}
+  ([n coll]
+     (partition n n coll))
+  ([n step coll]
+     (lazy-seq
+       (let [s (seq coll)]
+         (when s
+           (let [p (doall (take n s))]
+             (when (= n (count p))
+               (cons p (partition n step (nthrest s step)))))))))
+  ([n step pad coll]
+     (lazy-seq
+       (let [s (seq coll)]
+         (when s
+           (let [p (doall (take n s))]
+             (if (= n (count p))
+               (cons p (partition n step pad (nthrest s step)))
+               (list (take n (concat p pad))))))))))
 
 ; ;; evaluation
 
@@ -3182,18 +3177,18 @@
 ;   array [& items]
 ;     (into-array items))
 
-; (defn class
-;   "Returns the Class of x"
-;   {:added "1.0"
-;    :static true}
-;   ^Class [^Object x] (if (nil? x) x (. x (getClass))))
+(defn class
+  "Returns the Class of x"
+  {:added "1.0"
+   :static true}
+  [x] (.class x))
 
-; (defn type
-;   "Returns the :type metadata of x, or its Class if none"
-;   {:added "1.0"
-;    :static true}
-;   [x]
-;   (or (get (meta x) :type) (class x)))
+(defn type
+  "Returns the :type metadata of x, or its Class if none"
+  {:added "1.0"
+   :static true}
+  [x]
+  (or (get (meta x) :type) (class x)))
 
 ; (defn num
 ;   "Coerce to Number"
@@ -3423,52 +3418,75 @@
 ;      (recur (first more) nmore)
 ;      (apply pr more))))
 
-; (def ^:private ^String system-newline
-;      (System/getProperty "line.separator"))
+(defn pr-on
+  {:private true
+   :static true}
+  [x w]
+  (.write w x)
+  nil)
 
-; (defn newline
-;   "Writes a platform-specific newline to *out*"
-;   {:added "1.0"
-;    :static true}
-;   []
-;     (. *out* (append system-newline))
-;     nil)
+(defn pr
+  "Prints the object(s) to the output stream that is the current value
+  of *out*.  Prints the object(s), separated by spaces if there is
+  more than one.  By default, pr and prn print in a way that objects
+  can be read by the reader"
+  {:dynamic true
+   :added "1.0"}
+  ([] nil)
+  ([x]
+     (pr-on x *out*))
+  ([x & more]
+   (pr x)
+   (. *out* (write \space))
+   (let [nmore (next more)]
+     (if nmore
+       (recur (first more) nmore)
+       (apply pr more)))))
 
-; (defn flush
-;   "Flushes the output stream that is the current value of
-;   *out*"
-;   {:added "1.0"
-;    :static true}
-;   []
-;     (. *out* (flush))
-;     nil)
+(def ^:private system-newline "\n")
 
-; (defn prn
-;   "Same as pr followed by (newline). Observes *flush-on-newline*"
-;   {:added "1.0"
-;    :static true}
-;   [& more]
-;     (apply pr more)
-;     (newline)
-;     (when *flush-on-newline*
-;       (flush)))
+(defn newline
+  "Writes a platform-specific newline to *out*"
+  {:added "1.0"
+   :static true}
+  []
+    (. *out* (write system-newline))
+    nil)
 
-; (defn print
-;   "Prints the object(s) to the output stream that is the current value
-;   of *out*.  print and println produce output for human consumption."
-;   {:added "1.0"
-;    :static true}
-;   [& more]
-;     (binding [*print-readably* nil]
-;       (apply pr more)))
+(defn flush
+  "Flushes the output stream that is the current value of
+  *out*"
+  {:added "1.0"
+   :static true}
+  []
+    (. *out* (flush))
+    nil)
 
-; (defn println
-;   "Same as print followed by (newline)"
-;   {:added "1.0"
-;    :static true}
-;   [& more]
-;     (binding [*print-readably* nil]
-;       (apply prn more)))
+(defn prn
+  "Same as pr followed by (newline). Observes *flush-on-newline*"
+  {:added "1.0"
+   :static true}
+  [& more]
+  (apply pr more)
+  (newline)
+  (flush))
+
+(defn print
+  "Prints the object(s) to the output stream that is the current value
+  of *out*.  print and println produce output for human consumption."
+  {:added "1.0"
+   :static true}
+  [& more]
+  (apply pr more)
+  nil)
+
+(defn println
+  "Same as print followed by (newline)"
+  {:added "1.0"
+   :static true}
+  [& more]
+    (apply prn more)
+    nil)
 
 ; (defn read
 ;   "Reads the next object from stream, which must be an instance of
@@ -3574,15 +3592,18 @@
 ;     `(fn [~t ~@args]
 ;        (. ~t (~name ~@args)))))
 
-; (defmacro time
-;   "Evaluates expr and prints the time it took.  Returns the value of
-;  expr."
-;   {:added "1.0"}
-;   [expr]
-;   `(let [start# (. System (nanoTime))
-;          ret# ~expr]
-;      (prn (str "Elapsed time: " (/ (double (- (. System (nanoTime)) start#)) 1000000.0) " msecs"))
-;      ret#))
+(defn -now {:private true} []
+  (.to_f (.now Time)))
+
+(defmacro time
+  "Evaluates expr and prints the time it took.  Returns the value of
+ expr."
+  {:added "1.0"}
+  [expr]
+  `(let [start# (-now)
+         ret# ~expr]
+     (prn (str "Elapsed time: " (* (- (-now) start#) 1000.0) " msecs"))
+     ret#))
 
 
 
@@ -3708,25 +3729,25 @@
 ;           (recur (inc i) (next xs))))
 ;       ret))
 
-; (defn macroexpand-1
-;   "If form represents a macro form, returns its expansion,
-;   else returns form."
-;   {:added "1.0"
-;    :static true}
-;   [form]
-;     (. clojure.lang.Compiler (macroexpand1 form)))
+(defn macroexpand-1
+  "If form represents a macro form, returns its expansion,
+  else returns form."
+  {:added "1.0"
+   :static true}
+  [form]
+    (. Hammock.ListEvaluator (macroexpand1 form)))
 
-; (defn macroexpand
-;   "Repeatedly calls macroexpand-1 on form until it no longer
-;   represents a macro form, then returns it.  Note neither
-;   macroexpand-1 nor macroexpand expand macros in subforms."
-;   {:added "1.0"
-;    :static true}
-;   [form]
-;     (let [ex (macroexpand-1 form)]
-;       (if (identical? ex form)
-;         form
-;         (macroexpand ex))))
+(defn macroexpand
+  "Repeatedly calls macroexpand-1 on form until it no longer
+  represents a macro form, then returns it.  Note neither
+  macroexpand-1 nor macroexpand expand macros in subforms."
+  {:added "1.0"
+   :static true}
+  [form]
+    (let [ex (macroexpand-1 form)]
+      (if (identical? ex form)
+        form
+        (macroexpand ex))))
 
 ; (defn create-struct
 ;   "Returns a structure basis object."

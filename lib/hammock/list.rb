@@ -187,6 +187,11 @@ module Hammock
       def empty?
         true
       end
+
+      def inspect
+        "()"
+      end
+      alias to_s inspect
     end
   end
 end

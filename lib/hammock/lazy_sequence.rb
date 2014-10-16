@@ -29,7 +29,7 @@ module Hammock
     end
 
     def empty?
-      !seq.nil?
+      seq.nil?
     end
 
     def head

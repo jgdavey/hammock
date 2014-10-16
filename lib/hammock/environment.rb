@@ -18,7 +18,13 @@ module Hammock
     end
 
     def find(name)
-      @frame[name]
+      if item = @frame[name]
+        if Var === item && item.dynamic?
+          item.deref
+        else
+          item
+        end
+      end
     end
     alias [] find
 

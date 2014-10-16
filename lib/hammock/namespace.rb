@@ -68,5 +68,13 @@ module Hammock
       @symtable[sym.name] = var
       var
     end
+
+    def inspect
+      "#<Namespace: #@name>"
+    end
+
+    def to_s
+      @name
+    end
   end
 end

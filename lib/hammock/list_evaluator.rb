@@ -41,11 +41,18 @@ module Hammock
       Sequence.from_array [DOT, klass, args]
     end
 
-    def macroexpand1(env, form)
+    def macroexpand1(form, env=RT.global_env)
+      form, _ = _macroexpand1(env, form)
+      form
+    end
+
+    def _macroexpand1(env, form)
       return form, false unless form.is_a?(List)
       sym = form.car
       if Hammock::Symbol === sym
-        if sym.name.start_with?(DOT.name)
+        if sym.name == DOT.name
+          return form, false
+        elsif sym.name.start_with?(DOT.name)
           form = expand_method(form)
           return form, false
         elsif sym.name.end_with?(DOT.name)
@@ -75,7 +82,7 @@ module Hammock
       ret = true
       spec = nil
       while ret && !spec
-        form, ret = macroexpand1(env, form)
+        form, ret = _macroexpand1(env, form)
         spec = special(form) if form
       end
       form
