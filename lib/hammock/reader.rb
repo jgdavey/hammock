@@ -5,7 +5,6 @@ require 'hammock/rt'
 require 'hammock/set'
 require 'hammock/sequence'
 require 'hammock/symbol'
-require 'hammock/token'
 require 'hammock/vector'
 require 'hammock/quote'
 
@@ -526,7 +525,7 @@ module Hammock
 
     def read_arg(io, pct)
       unless Thread.current[:arg_env]
-        return interpretToken(read_token(io, '%'))
+        return interpret_token(read_token(io, '%'))
       end
       char = io.getc
       io.backc
@@ -544,7 +543,6 @@ module Hammock
         raise ArgumentError, "arg literal must be %, %& or %integer"
       end
     end
-
 
   end
 end
