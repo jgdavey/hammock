@@ -180,6 +180,10 @@ module Hammock
         nil
       end
 
+      def with_meta(*)
+        self
+      end
+
       def empty?
         true
       end

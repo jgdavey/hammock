@@ -16,6 +16,19 @@ module Hammock
       end
     end
 
+    def self.from_hash(hash = {})
+      map = new
+      hash.reduce(map) { |m, (k, v)| m.put(k, v) }
+    end
+
+    def self.from_array(array)
+      map = new
+      array.each_slice(2) do |pair|
+        map = map.put(pair.first, pair.last)
+      end
+      map
+    end
+
     def self.from_array(array)
       map = new
       array.each_slice(2) do |pair|
