@@ -7,8 +7,10 @@ require 'hammock/environment'
 require 'hammock/loop_locals'
 require 'hammock/recur_locals'
 require 'hammock/stream'
+require 'hammock/reduced'
 require 'hammock/sequence'
 require 'hammock/lazy_sequence'
+require 'hammock/lazy_transformer'
 require 'hammock/var'
 require 'hammock/vector'
 require 'hammock/function'
@@ -144,14 +146,14 @@ module Hammock
 
     def self.first(sequence)
       if coll = seq(sequence)
-        coll.car
+        coll.first
       end
     end
 
     def self.second(sequence)
       if coll = seq(sequence)
-        if coll = coll.cdr
-          coll.car unless coll.empty?
+        if coll = coll.tail
+          coll.first unless coll.empty?
         end
       end
     end
@@ -175,7 +177,7 @@ module Hammock
       case sequence
       when NilClass
         nil
-      when Hammock::List
+      when Hammock::List, Hammock::LazyTransformer
         sequence.seq
       else
         if sequence.respond_to?(:to_a)
@@ -185,8 +187,20 @@ module Hammock
       end
     end
 
+    def self.iter(coll)
+      if coll.respond_to?(:each)
+        coll.to_enum
+      else
+        seq(coll).to_enum
+      end
+    end
+
     def self.seq?(sequence)
       Hammock::List === sequence
+    end
+
+    def self.reduced?(obj)
+      Hammock::Reduced === obj
     end
 
     def self.count(sequence)

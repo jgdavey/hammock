@@ -56,7 +56,6 @@ module Hammock
     end
     alias to_s inspect
 
-
     def empty?
       false
     end

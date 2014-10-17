@@ -1,6 +1,10 @@
+require 'hammock/meta'
+require 'hammock/ifn'
+
 module Hammock
   class Function
     include Meta
+    include IFn
 
     attr_reader :arities
     attr_writer :meta

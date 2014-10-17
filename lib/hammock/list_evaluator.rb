@@ -114,9 +114,9 @@ module Hammock
       end
 
       case fn
-      when Function
+      when IFn
         args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
-        fn.call list, env, *args
+        fn.apply *args
       when ::Symbol
         args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
         if args.count > 2

@@ -2390,24 +2390,25 @@
 
 ; ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
 
-; (defn sequence
-;   "Coerces coll to a (possibly empty) sequence, if it is not already
-;   one. Will not force a lazy seq. (sequence nil) yields (), When a
-;   transducer is supplied, returns a lazy sequence of applications of
-;   the transform to the items in coll(s), i.e. to the set of first
-;   items of each coll, followed by the set of second
-;   items in each coll, until any one of the colls is exhausted.  Any
-;   remaining items in other colls are ignored. The transform should accept
-;   number-of-colls arguments"
-;   {:added "1.0"
-;    :static true}
-;   ([coll]
-;      (if (seq? coll) coll
-;          (or (seq coll) ())))
-;   ([xform coll]
-;      (clojure.lang.LazyTransformer/create xform coll))
-;   ([xform coll & colls]
-;      (clojure.lang.LazyTransformer/createMulti xform (to-array (cons coll colls)))))
+(defn sequence
+  "Coerces coll to a (possibly empty) sequence, if it is not already
+  one. Will not force a lazy seq. (sequence nil) yields (), When a
+  transducer is supplied, returns a lazy sequence of applications of
+  the transform to the items in coll(s), i.e. to the set of first
+  items of each coll, followed by the set of second
+  items in each coll, until any one of the colls is exhausted.  Any
+  remaining items in other colls are ignored. The transform should accept
+  number-of-colls arguments"
+  {:added "1.0"
+   :static true}
+  ([coll]
+     (if (seq? coll) coll
+         (or (seq coll) ())))
+  ([xform coll]
+     (.create Hammock.LazyTransformer xform coll))
+  )
+  ; ([xform coll & colls]
+  ;    (clojure.lang.LazyTransformer/createMulti xform (to-array (cons coll colls)))))
 
 (defn every?
   "Returns true if (pred x) is logical true for every x in coll, else
@@ -2473,15 +2474,15 @@
   no collection is provided."
   {:added "1.0"
    :static true}
-  ; ([f]
-  ;   (fn [f1]
-  ;     (fn
-  ;       ([] (f1))
-  ;       ([result] (f1 result))
-  ;       ([result input]
-  ;          (f1 result (f input)))
-  ;       ([result input & inputs]
-  ;          (f1 result (apply f input inputs))))))
+  ([f]
+    (fn [f1]
+      (fn
+        ([] (f1))
+        ([result] (f1 result))
+        ([result input]
+           (f1 result (f input)))
+        ([result input & inputs]
+           (f1 result (apply f input inputs))))))
   ([f coll]
    (lazy-seq
      (let [s (seq coll)]
@@ -2530,15 +2531,15 @@
   Returns a transducer when no collection is provided."
   {:added "1.0"
    :static true}
-  ; ([pred]
-  ;   (fn [f1]
-  ;     (fn
-  ;       ([] (f1))
-  ;       ([result] (f1 result))
-  ;       ([result input]
-  ;          (if (pred input)
-  ;            (f1 result input)
-  ;            result)))))
+  ([pred]
+    (fn [f1]
+      (fn
+        ([] (f1))
+        ([result] (f1 result))
+        ([result input]
+           (if (pred input)
+             (f1 result input)
+             result)))))
   ([pred coll]
    (lazy-seq
     (when-let [s (seq coll)]
@@ -2562,22 +2563,20 @@
   Returns a transducer when no collection is provided."
   {:added "1.0"
    :static true}
-  ; ([pred] (filter (complement pred)))
+  ([pred] (filter (complement pred)))
   ([pred coll]
      (filter (complement pred) coll)))
 
-; (defn reduced
-;   "Wraps x in a way such that a reduce will terminate with the value x"
-;   {:added "1.5"}
-;   [x]
-;   (clojure.lang.Reduced. x))
+(defn reduced
+  "Wraps x in a way such that a reduce will terminate with the value x"
+  {:added "1.5"}
+  [x]
+  (Hammock.Reduced. x))
 
-; (defn reduced?
-;   "Returns true if x is the result of a call to reduced"
-;   {:inline (fn [x] `(clojure.lang.RT/isReduced ~x ))
-;    :inline-arities #{1}
-;    :added "1.5"}
-;   ([x] (clojure.lang.RT/isReduced x)))
+(defn reduced?
+  "Returns true if x is the result of a call to reduced"
+  {:added "1.5"}
+  ([x] (. RT (.reduced? x))))
 
 (defn take
   "Returns a lazy sequence of the first n items in coll, or all items if
@@ -2613,15 +2612,15 @@
   Returns a transducer when no collection is provided."
   {:added "1.0"
    :static true}
-  ; ([pred]
-  ;    (fn [f1]
-  ;      (fn
-  ;        ([] (f1))
-  ;        ([result] (f1 result))
-  ;        ([result input]
-  ;           (if (pred input)
-  ;             (f1 result input)
-  ;             (reduced result))))))
+  ([pred]
+     (fn [f1]
+       (fn
+         ([] (f1))
+         ([result] (f1 result))
+         ([result input]
+            (if (pred input)
+              (f1 result input)
+              (reduced result))))))
   ([pred coll]
      (lazy-seq
       (let [s (seq coll)]
