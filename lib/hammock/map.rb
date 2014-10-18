@@ -1,16 +1,25 @@
-require 'hamster/hash'
+require 'forwardable'
+require 'hamster/immutable'
+require 'hamster/trie'
+
+require 'hammock/meta'
 
 module Hammock
-  class Map < Hamster::Hash
+  class Map
+    include Hamster::Immutable
     include Meta
+    Undefined = Object.new
 
     def self.alloc_from(map, meta=nil)
       map.send(:transform) { @meta = meta }
     end
 
     def self.create(coll)
-      if Map === coll
+      case coll
+      when Map
         coll
+      when Hash
+        from_hash(coll)
       else
         from_array(coll.to_a)
       end
@@ -39,7 +48,100 @@ module Hammock
 
     def initialize(meta=nil)
       @meta = meta
-      super()
+      @trie = Hamster::EmptyTrie
+    end
+
+    def size
+      @trie.size
+    end
+    alias length size
+
+    def empty?
+      @trie.empty?
+    end
+    alias null? empty?
+
+    def has_key?(key)
+      @trie.has_key?(key)
+    end
+    alias key? has_key?
+
+    def entry_at(key)
+      @trie.get(key)
+    end
+
+    def get(key)
+      if entry = entry_at(key)
+        entry.value
+      end
+    end
+    alias [] get
+    alias val_at get
+
+    def fetch(key, default = Undefined)
+      entry = @trie.get(key)
+      if entry
+        entry.value
+      elsif default != Undefined
+        default
+      elsif block_given?
+        yield
+      else
+        raise KeyError.new("key not found: #{key.inspect}")
+      end
+    end
+
+    def put(key, value = Undefined)
+      if value.equal?(Undefined)
+        put(key, yield(get(key)))
+      else
+        transform { @trie = @trie.put(key, value) }
+      end
+    end
+    alias assoc put
+
+    def delete(key)
+      trie = @trie.delete(key)
+      transform_unless(trie.equal?(@trie)) { @trie = trie }
+    end
+    alias without delete
+
+    def each
+      return self unless block_given?
+      @trie.each { |entry| yield(entry.key, entry.value) }
+    end
+
+    def reduce(memo)
+      return memo unless block_given?
+      @trie.reduce(memo) { |memo, entry| yield(memo, entry.key, entry.value) }
+    end
+
+    def merge(other)
+      transform { @trie = other.reduce(@trie, &:put) }
+    end
+    alias + merge
+
+    def keys
+      reduce(Hammock::Set.new) { |keys, key, value| keys.add(key) }
+    end
+
+    def values
+      reduce(Hammock::EmptyList) { |values, key, value| values.cons(value) }
+    end
+
+    def seq
+      @trie.reduce(Hammock::EmptyList) { |entries, entry| entries.cons(entry)}
+    end
+
+    def cons(obj)
+      case obj
+      when Vector
+        assoc(obj[0], obj[1])
+      when Hamster::Trie::Entry
+        assoc(obj.key, obj.value)
+      else
+        # seq?
+      end
     end
 
     def conj(pair)
@@ -50,6 +152,15 @@ module Hammock
       put *pair
     end
 
+    def eql?(other)
+      instance_of?(other.class) && @trie.eql?(other.instance_variable_get(:@trie))
+    end
+    alias == eql?
+
+    def hash
+      reduce(0) { |hash, key, value| (hash << 32) - hash + key.hash + value.hash }
+    end
+
     def evaluate(env)
       ret = []
       each do |k,v|
@@ -57,8 +168,6 @@ module Hammock
       end
       self.class.from_pairs(ret)
     end
-
-    alias assoc put
 
     def inspect
       out = []

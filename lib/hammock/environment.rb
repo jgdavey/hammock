@@ -4,7 +4,7 @@ module Hammock
 
     def initialize(frame)
       unless Hammock::Map === frame
-        frame = Hammock::Map.new frame
+        frame = Hammock::Map.create frame
       end
       @frame = frame
     end
@@ -35,9 +35,9 @@ module Hammock
     def inspect
       parts = []
       f = frame.each do |k,v|
-        parts << "#{k} => #{v.class}"
+        parts << " #{k}\t#{v.inspect}"
       end
-      "#<#{self.class} frame=#{parts.join("\n")}"
+      "#<#{self.class}\n#{parts.join("\n")}"
     end
     alias to_s inspect
   end
