@@ -29,9 +29,9 @@ module Hammock
       map
     end
 
-    def self.from_array(array)
+    def self.from_pairs(array)
       map = new
-      array.each_slice(2) do |pair|
+      array.each do |pair|
         map = map.put(pair.first, pair.last)
       end
       map
@@ -48,6 +48,14 @@ module Hammock
         raise "You passed #{pair} as an argument to conj, but needs an Array-like arg"
       end
       put *pair
+    end
+
+    def evaluate(env)
+      ret = []
+      each do |k,v|
+        ret << [k.evaluate(env), v.evaluate(env)]
+      end
+      self.class.from_pairs(ret)
     end
 
     alias assoc put
