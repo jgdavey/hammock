@@ -35,10 +35,6 @@ module Hammock
       arities.map(&:arity)
     end
 
-    def call(form, env, *args)
-      apply(*args)
-    end
-
     def find_arity!(*args)
       needed = args.to_a.length
       arities.detect {|a| a.handles_arity?(needed)} or \
@@ -60,11 +56,7 @@ module Hammock
       "#{ns.name}/#@internal_name"
     end
 
-    def apply_to(sequence)
-      apply(*sequence.to_a)
-    end
-
-    def apply(*args)
+    def call(*args)
       arity = find_arity!(*args)
 
       env = @env.bind("__namespace__", @ns)

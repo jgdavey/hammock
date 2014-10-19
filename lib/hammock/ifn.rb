@@ -1,9 +1,10 @@
 module Hammock
   module IFn
-    # def apply(*args)
+    # def call(*args)
     # end
 
-    # def apply_to(coll)
-    # end
+    def apply_to(sequence)
+      call(*sequence.to_a)
+    end
   end
 end

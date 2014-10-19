@@ -63,7 +63,7 @@ module Hammock
       if item = find_var(env, sym)
         dreffed = item.deref
         if macro?(item) || macro?(dreffed)
-          form = dreffed.call(dreffed, nil, form, env, *form.cdr)
+          form = dreffed.call(form, env, *form.cdr)
           return form, true
         else
           return form, false
@@ -116,7 +116,7 @@ module Hammock
       case fn
       when IFn
         args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
-        fn.apply *args
+        fn.call *args
       when ::Symbol
         args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
         if args.count > 2

@@ -63,7 +63,7 @@ module Hammock
     def sval
       unless fn.nil?
         @fn.update do |v|
-          @target = v.apply
+          @target = v.call
           nil
         end
       end

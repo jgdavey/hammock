@@ -109,7 +109,7 @@ module Hammock
     class Stepper
       class StepFn
         include IFn
-        def apply(*args)
+        def call(*args)
           if args.length == 1
             apply_result(args.first)
           else
@@ -134,7 +134,7 @@ module Hammock
 
       def initialize(xform, iter)
         @iter = iter
-        @xform = xform.apply(StepFn.new)
+        @xform = xform.call(StepFn.new)
       end
 
       def next?
@@ -146,7 +146,7 @@ module Hammock
 
       def step(lt)
         while !lt.stepper.nil? && next?
-          if RT.reduced?(@xform.apply(lt, @iter.next))
+          if RT.reduced?(@xform.call(lt, @iter.next))
             unless lt.rest.nil?
               lt.rest.stepper = nil
             end
@@ -154,7 +154,7 @@ module Hammock
           end
         end
         unless lt.stepper.nil?
-          @xform.apply(lt)
+          @xform.call(lt)
         end
         nil
       end
