@@ -2,11 +2,15 @@ require 'hamster/immutable'
 require 'hamster/trie'
 
 require 'hammock/meta'
+require 'hammock/ifn'
+require 'hammock/ilookup'
 
 module Hammock
   class Set
     include Hamster::Immutable
     include Meta
+    include IFn
+    include ILookup
 
     Undefined = Object.new
 
@@ -83,7 +87,26 @@ module Hammock
     end
 
     def include?(object)
-      any? { |item| item.eql?(object) }
+      has_key?(object)
+    end
+
+    def has_key?(key)
+      @trie.has_key?(key)
+    end
+    alias key? has_key?
+
+    def fetch(object, default=Undefined)
+      if has_key?(object)
+        object
+      elsif !default.equal?(Undefined)
+        default
+      end
+    end
+    alias call fetch
+    alias val_at fetch
+
+    def get(object)
+      object if has_key?(object)
     end
 
     def seq

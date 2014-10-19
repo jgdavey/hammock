@@ -3,11 +3,15 @@ require 'hamster/immutable'
 require 'hamster/trie'
 
 require 'hammock/meta'
+require 'hammock/ifn'
+require 'hammock/ilookup'
 
 module Hammock
   class Map
     include Hamster::Immutable
     include Meta
+    include IFn
+    include ILookup
     Undefined = Object.new
 
     def self.alloc_from(map, meta=nil)
@@ -76,7 +80,6 @@ module Hammock
       end
     end
     alias [] get
-    alias val_at get
 
     def fetch(key, default = Undefined)
       entry = @trie.get(key)
@@ -89,6 +92,11 @@ module Hammock
       else
         raise KeyError.new("key not found: #{key.inspect}")
       end
+    end
+    alias val_at fetch
+
+    def call(key, default=nil)
+      fetch(key, default)
     end
 
     def put(key, value = Undefined)

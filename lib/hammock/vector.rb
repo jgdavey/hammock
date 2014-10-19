@@ -1,10 +1,15 @@
 require 'hamster/immutable'
+
 require 'hammock/meta'
+require 'hammock/ifn'
+require 'hammock/ilookup'
 
 module Hammock
   class Vector
     include Hamster::Immutable
     include Meta
+    include IFn
+    include ILookup
 
     Undefined = Object.new
 
@@ -80,9 +85,12 @@ module Hammock
       return get(@size + index) if index < 0
       leaf_node_for(@root, root_index_bits, index)[index & INDEX_MASK]
     end
-    alias vat_at get
+    alias nth get
 
     def fetch(n, missing=Undefined)
+      unless Integer === n
+        raise "Index must be an Integer. Received #{n.inspect}"
+      end
       if n >= count
         if missing == Undefined
           raise IndexError
@@ -92,6 +100,11 @@ module Hammock
       else
         get(n)
       end
+    end
+    alias val_at fetch
+
+    def call(n, missing=nil)
+      fetch(n, missing)
     end
 
     def each(&block)
@@ -201,6 +214,7 @@ module Hammock
 
     class SubVector
       include Meta
+      include IFn
       attr_reader :start_idx, :end_idx, :v
 
       def self.alloc_from(subvec, meta)
@@ -233,11 +247,29 @@ module Hammock
       alias conj add
       alias cons add
 
-      def nth(i)
+      def get(i)
         if (@start_idx + i) >= @end_idx || i < 0
           raise IndexError, "Index #{i} out of bounds."
         end
         return v.nth(@start_idx + i);
+      end
+      alias nth get
+      alias val_at get
+
+      def fetch(n, missing=Undefined)
+        if n >= count
+          if missing == Undefined
+            raise IndexError
+          else
+            missing
+          end
+        else
+          get(n)
+        end
+      end
+
+      def call(n, missing=nil)
+        fetch(n, missing)
       end
 
       def assoc_n(i, obj)
@@ -249,6 +281,7 @@ module Hammock
           self.class.new v.assoc_n(@start_idx + i, obj), @start_idx, @end_idx
         end
       end
+      alias assoc assoc_n
 
       def inspect
         "[#{to_a.map(&:inspect).join(' ')}]"

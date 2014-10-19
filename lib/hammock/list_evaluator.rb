@@ -123,14 +123,9 @@ module Hammock
           raise ArgumentError, "more than one arg passed as argument to Keyword #{fn}"
         end
         map, default = *args
-        map.fetch(fn, default) if map
-      when Map, Vector
-        args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
-        if args.count > 2
-          raise ArgumentError, "more than one arg passed as argument to Map"
+        if ILookup === map
+          map.fetch(fn, default)
         end
-        key, default = *args
-        fn.fetch(key, default)
       else
         raise "What? #{fn}, #{fn.class}"
       end
