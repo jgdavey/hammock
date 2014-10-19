@@ -5765,43 +5765,43 @@
 ;   ([m k f x y z & more]
 ;    (assoc m k (apply f (get m k) x y z more))))
 
-; (defn empty?
-;   "Returns true if coll has no items - same as (not (seq coll)).
-;   Please use the idiom (seq x) rather than (not (empty? x))"
-;   {:added "1.0"
-;    :static true}
-;   [coll] (not (seq coll)))
+(defn empty?
+  "Returns true if coll has no items - same as (not (seq coll)).
+  Please use the idiom (seq x) rather than (not (empty? x))"
+  {:added "1.0"
+   :static true}
+  [coll] (not (seq coll)))
 
-; (defn coll?
-;   "Returns true if x implements IPersistentCollection"
-;   {:added "1.0"
-;    :static true}
-;   [x] (instance? clojure.lang.IPersistentCollection x))
+(defn coll?
+  "Returns true if x implements IPersistentCollection"
+  {:added "1.0"
+   :static true}
+  [x] (instance? Hammock.IPersistentCollection x))
 
-; (defn list?
-;   "Returns true if x implements IPersistentList"
-;   {:added "1.0"
-;    :static true}
-;   [x] (instance? clojure.lang.IPersistentList x))
+(defn list?
+  "Returns true if x implements List"
+  {:added "1.0"
+   :static true}
+  [x] (instance? List x))
 
-; (defn set?
-;   "Returns true if x implements IPersistentSet"
-;   {:added "1.0"
-;    :static true}
-;   [x] (instance? clojure.lang.IPersistentSet x))
+(defn set?
+  "Returns true if x implements IPersistentSet"
+  {:added "1.0"
+   :static true}
+  [x] (instance? Hammock.Set x))
 
-; (defn ifn?
-;   "Returns true if x implements IFn. Note that many data structures
-;   (e.g. sets and maps) implement IFn"
-;   {:added "1.0"
-;    :static true}
-;   [x] (instance? clojure.lang.IFn x))
+(defn ifn?
+  "Returns true if x implements IFn. Note that many data structures
+  (e.g. sets and maps) implement IFn"
+  {:added "1.0"
+   :static true}
+  [x] (instance? Hammock.IFn x))
 
-; (defn fn?
-;   "Returns true if x implements Fn, i.e. is an object created via fn."
-;   {:added "1.0"
-;    :static true}
-;   [x] (instance? clojure.lang.Fn x))
+(defn fn?
+  "Returns true if x implements Fn, i.e. is an object created via fn."
+  {:added "1.0"
+   :static true}
+  [x] (instance? Hammock.Function x))
 
 
 ; (defn associative?
