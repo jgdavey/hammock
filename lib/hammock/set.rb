@@ -1,6 +1,7 @@
 require 'hamster/immutable'
 require 'hamster/trie'
 
+require 'hammock/ipersistent_collection'
 require 'hammock/meta'
 require 'hammock/ifn'
 require 'hammock/ilookup'
@@ -8,6 +9,7 @@ require 'hammock/ilookup'
 module Hammock
   class Set
     include Hamster::Immutable
+    include IPersistentCollection
     include Meta
     include IFn
     include ILookup
@@ -51,6 +53,7 @@ module Hammock
       transform_unless(include?(item)) { @trie = @trie.put(item, nil) }
     end
     alias conj add
+    alias cons add
 
     def delete(item)
       trie = @trie.delete(item)
@@ -124,6 +127,10 @@ module Hammock
 
     def hash
       reduce(0) { |hash, item| (hash << 5) - hash + item.hash }
+    end
+
+    def empty
+      self.class.new(meta)
     end
 
     def to_a

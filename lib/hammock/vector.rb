@@ -1,5 +1,6 @@
 require 'hamster/immutable'
 
+require 'hammock/ipersistent_collection'
 require 'hammock/meta'
 require 'hammock/ifn'
 require 'hammock/ilookup'
@@ -7,6 +8,7 @@ require 'hammock/ilookup'
 module Hammock
   class Vector
     include Hamster::Immutable
+    include IPersistentCollection
     include Meta
     include IFn
     include ILookup
@@ -126,7 +128,7 @@ module Hammock
     end
 
     def empty
-      EmptyVector
+      self.class.new(meta)
     end
 
     def eql?(other)
@@ -213,8 +215,10 @@ module Hammock
     end
 
     class SubVector
+      include IPersistentCollection
       include Meta
       include IFn
+      include ILookup
       attr_reader :start_idx, :end_idx, :v
 
       def self.alloc_from(subvec, meta)
@@ -236,14 +240,15 @@ module Hammock
         a[start_idx..end_idx]
       end
 
-      def count
+      def size
         @end_idx - @start_idx
       end
+      alias count size
+      alias length size
 
       def add(obj)
         self.class.new(meta, v.assoc_n(@end_idx, obj), @start_idx, @end_idx + 1)
       end
-
       alias conj add
       alias cons add
 

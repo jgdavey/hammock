@@ -2,6 +2,7 @@ require 'forwardable'
 require 'hamster/immutable'
 require 'hamster/trie'
 
+require 'hammock/ipersistent_collection'
 require 'hammock/meta'
 require 'hammock/ifn'
 require 'hammock/ilookup'
@@ -9,9 +10,11 @@ require 'hammock/ilookup'
 module Hammock
   class Map
     include Hamster::Immutable
+    include IPersistentCollection
     include Meta
     include IFn
     include ILookup
+
     Undefined = Object.new
 
     def self.alloc_from(map, meta=nil)
@@ -59,6 +62,7 @@ module Hammock
       @trie.size
     end
     alias length size
+    alias count size
 
     def empty?
       @trie.empty?
@@ -144,7 +148,7 @@ module Hammock
     def cons(obj)
       case obj
       when Vector
-        assoc(obj[0], obj[1])
+        assoc(obj.get(0), obj.get(1))
       when Hamster::Trie::Entry
         assoc(obj.key, obj.value)
       else
@@ -158,6 +162,10 @@ module Hammock
         raise "You passed #{pair} as an argument to conj, but needs an Array-like arg"
       end
       put *pair
+    end
+
+    def empty
+      self.class.new(meta)
     end
 
     def eql?(other)

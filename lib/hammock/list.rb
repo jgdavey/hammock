@@ -3,9 +3,11 @@ require 'forwardable'
 require 'hamster/enumerable'
 require 'hammock/set'
 require 'hammock/list_evaluator'
+require 'hammock/ipersistent_collection'
 
 module Hammock
   module List
+    include IPersistentCollection
     include Hamster::Enumerable
 
     CADR = /^c([ad]+)r$/
@@ -132,6 +134,10 @@ module Hammock
 
     def hash
       reduce(0) { |hash, item| (hash << 5) - hash + item.hash }
+    end
+
+    def empty
+      EmptyList
     end
 
     def dup
