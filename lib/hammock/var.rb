@@ -1,3 +1,5 @@
+require 'hammock/ideref'
+
 module Hammock
   class Var
     include Meta

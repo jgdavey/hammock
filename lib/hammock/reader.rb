@@ -53,9 +53,11 @@ module Hammock
     UNQUOTE = Symbol.intern("clojure.core", "unquote")
     UNQUOTE_SPLICING = Symbol.intern("clojure.core", "unquote-splicing")
     APPLY = Symbol.intern("clojure.core", "apply")
+    DEREF = Symbol.intern("clojure.core", "deref")
     SEQ = Symbol.intern("clojure.core", "seq")
     CONCAT = Symbol.intern("clojure.core", "concat")
     LIST = Symbol.intern("list")
+    QUOTE = Symbol.intern("quote")
     AMP = Symbol.intern("&")
     VECTOR = Symbol.intern("clojure.core", "vector")
     HASHMAP = Symbol.intern("clojure.core", "hash-map")
@@ -75,6 +77,7 @@ module Hammock
       ?# => :read_dispatched,
       ?% => :read_arg,
       ?' => :read_quoted,
+      ?@ => :read_deref,
       ?` => :read_syntax_quoted,
       ?^ => :read_meta,
       ?~ => :read_unquote,
@@ -208,7 +211,8 @@ module Hammock
       keyword = ""
       char = io.getc
       if char == ":"
-        keyword << ":"
+        prefix = RT::CURRENT_NS.deref.name
+        keyword << prefix << "/"
       else
         back(io)
       end
@@ -346,6 +350,14 @@ module Hammock
 
     def read_quoted(io, quote_mark)
       Hammock::Quote.new read(io)
+    end
+
+    def read_deref(io, at)
+      read_wrapped(io, DEREF)
+    end
+
+    def read_wrapped(io, sym)
+      RT.list(sym, read(io))
     end
 
     def read_unquote(io, quote_mark)

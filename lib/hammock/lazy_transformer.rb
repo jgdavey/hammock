@@ -62,6 +62,7 @@ module Hammock
         @rest.seq
       end
     end
+    alias tail next
 
     def more
       seq unless stepper.nil?

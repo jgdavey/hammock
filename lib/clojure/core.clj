@@ -2087,6 +2087,9 @@
 ;        (.deref ^clojure.lang.IBlockingDeref ref timeout-ms timeout-val)
 ;        (deref-future ref timeout-ms timeout-val))))
 
+(defn deref
+  ([ref] (.deref ref)))
+
 ; (defn atom
 ;   "Creates and returns an Atom with an initial value of x and zero or
 ;   more options (in any order):
@@ -2268,34 +2271,33 @@
 ;        (throw (new IllegalStateException ~(or message "I/O in transaction")))
 ;        (do ~@body))))
 
-; (defn volatile!
-;   "Creates and returns a Volatile with an initial value of val."
-;   {:added "1.7"
-;    :tag clojure.lang.Volatile}
-;   [val]
-;   (clojure.lang.Volatile. val))
+(defn volatile!
+  "Creates and returns a Volatile with an initial value of val."
+  {:added "1.7"}
+  [val]
+  (Hammock.Volatile. val))
 
-; (defn vreset!
-;   "Sets the value of volatile to newval without regard for the
-;    current value. Returns newval."
-;   {:added "1.7"}
-;   [^clojure.lang.Volatile vol newval]
-;   (.reset vol newval))
+(defn vreset!
+  "Sets the value of volatile to newval without regard for the
+   current value. Returns newval."
+  {:added "1.7"}
+  [vol newval]
+  (.reset vol newval))
 
-; (defmacro vswap!
-;   "Non-atomically swaps the value of the volatile as if:
-;    (apply f current-value-of-vol args). Returns the value that
-;    was swapped in."
-;   {:added "1.7"}
-;   [vol f & args]
-;   (let [v (with-meta vol {:tag 'clojure.lang.Volatile})]
-;     `(.reset ~v (~f (.deref ~v) ~@args))))
+(defmacro vswap!
+  "Non-atomically swaps the value of the volatile as if:
+   (apply f current-value-of-vol args). Returns the value that
+   was swapped in."
+  {:added "1.7"}
+  [vol f & args]
+  (let [v vol]
+    `(.reset ~v (~f (.deref ~v) ~@args))))
 
-; (defn volatile?
-;   "Returns true if x is a volatile."
-;   {:added "1.7"}
-;   [x]
-;   (instance? clojure.lang.Volatile x))
+(defn volatile?
+  "Returns true if x is a volatile."
+  {:added "1.7"}
+  [x]
+  (instance? Hammock.Volatile x))
 
 ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; fn stuff ;;;;;;;;;;;;;;;;
 
@@ -2584,21 +2586,21 @@
   no collection is provided."
   {:added "1.0"
    :static true}
-;   ([n]
-;      (fn [f1]
-;        (let [nv (volatile! n)]
-;          (fn
-;            ([] (f1))
-;            ([result] (f1 result))
-;            ([result input]
-;               (let [n @nv
-;                     nn (vswap! nv dec)
-;                     result (if (pos? n)
-;                              (f1 result input)
-;                              result)]
-;                 (if (not (pos? nn))
-;                   (reduced result)
-;                   result)))))))
+  ([n]
+     (fn [f1]
+       (let [nv (volatile! n)]
+         (fn
+           ([] (f1))
+           ([result] (f1 result))
+           ([result input]
+              (let [n @nv
+                    nn (vswap! nv dec)
+                    result (if (pos? n)
+                             (f1 result input)
+                             result)]
+                (if (not (pos? nn))
+                  (reduced result)
+                  result)))))))
   ([n coll]
      (lazy-seq
       (when (pos? n)
@@ -2632,18 +2634,18 @@
   Returns a stateful transducer when no collection is provided."
   {:added "1.0"
    :static true}
-  ; ([n]
-  ;    (fn [f1]
-  ;      (let [nv (volatile! n)]
-  ;        (fn
-  ;          ([] (f1))
-  ;          ([result] (f1 result))
-  ;          ([result input]
-  ;             (let [n @nv]
-  ;               (vswap! nv dec)
-  ;               (if (pos? n)
-  ;                 result
-  ;                 (f1 result input))))))))
+  ([n]
+     (fn [f1]
+       (let [nv (volatile! n)]
+         (fn
+           ([] (f1))
+           ([result] (f1 result))
+           ([result input]
+              (let [n @nv]
+                (vswap! nv dec)
+                (if (pos? n)
+                  result
+                  (f1 result input))))))))
   ([n coll]
      (let [step (fn [n coll]
                   (let [s (seq coll)]
@@ -2676,19 +2678,19 @@
   stateful transducer when no collection is provided."
   {:added "1.0"
    :static true}
-  ; ([pred]
-  ;    (fn [f1]
-  ;      (let [dv (volatile! true)]
-  ;        (fn
-  ;          ([] (f1))
-  ;          ([result] (f1 result))
-  ;          ([result input]
-  ;             (let [drop? @dv]
-  ;               (if (and drop? (pred input))
-  ;                 result
-  ;                 (do
-  ;                   (vreset! dv nil)
-  ;                   (f1 result input)))))))))
+  ([pred]
+     (fn [f1]
+       (let [dv (volatile! true)]
+         (fn
+           ([] (f1))
+           ([result] (f1 result))
+           ([result input]
+              (let [drop? @dv]
+                (if (and drop? (pred input))
+                  result
+                  (do
+                    (vreset! dv nil)
+                    (f1 result input)))))))))
   ([pred coll]
      (let [step (fn [pred coll]
                   (let [s (seq coll)]
@@ -3987,26 +3989,26 @@
 ;   [ns sym]
 ;   (.removeAlias (the-ns ns) sym))
 
-; (defn take-nth
-;   "Returns a lazy seq of every nth item in coll.  Returns a stateful
-;   transducer when no collection is provided."
-;   {:added "1.0"
-;    :static true}
-;   ([n]
-;      (fn [f1]
-;        (let [iv (volatile! -1)]
-;          (fn
-;            ([] (f1))
-;            ([result] (f1 result))
-;            ([result input]
-;               (let [i (vswap! iv inc)]
-;                 (if (zero? (rem i n))
-;                   (f1 result input)
-;                   result)))))))
-;   ([n coll]
-;      (lazy-seq
-;       (when-let [s (seq coll)]
-;         (cons (first s) (take-nth n (drop n s)))))))
+(defn take-nth
+  "Returns a lazy seq of every nth item in coll.  Returns a stateful
+  transducer when no collection is provided."
+  {:added "1.0"
+   :static true}
+  ([n]
+     (fn [f1]
+       (let [iv (volatile! -1)]
+         (fn
+           ([] (f1))
+           ([result] (f1 result))
+           ([result input]
+              (let [i (vswap! iv inc)]
+                (if (zero? (rem i n))
+                  (f1 result input)
+                  result)))))))
+  ([n coll]
+     (lazy-seq
+      (when-let [s (seq coll)]
+        (cons (first s) (take-nth n (drop n s)))))))
 
 ; (defn interleave
 ;   "Returns a lazy seq of the first item in each coll, then the second etc."
@@ -4558,25 +4560,25 @@
 ;    (let [m (re-matcher re s)]
 ;      (re-find m))))
 
-; (defn rand
-;   "Returns a random floating point number between 0 (inclusive) and
-;   n (default 1) (exclusive)."
-;   {:added "1.0"
-;    :static true}
-;   ([] (. Math (random)))
-;   ([n] (* n (rand))))
+(defn rand
+  "Returns a random floating point number between 0 (inclusive) and
+  n (default 1) (exclusive)."
+  {:added "1.0"
+   :static true}
+  ([] (. Kernel (rand)))
+  ([n] (* n (rand))))
 
-; (defn rand-int
-;   "Returns a random integer between 0 (inclusive) and n (exclusive)."
-;   {:added "1.0"
-;    :static true}
-;   [n] (int (rand n)))
+(defn rand-int
+  "Returns a random integer between 0 (inclusive) and n (exclusive)."
+  {:added "1.0"
+   :static true}
+  [n] (. Kernel (rand n)))
 
-; (defmacro defn-
-;   "same as defn, yielding non-public def"
-;   {:added "1.0"}
-;   [name & decls]
-;     (list* `defn (with-meta name (assoc (meta name) :private true)) decls))
+(defmacro defn-
+  "same as defn, yielding non-public def"
+  {:added "1.0"}
+  [name & decls]
+    (list* `defn (with-meta name (assoc (meta name) :private true)) decls))
 
 ; (defn tree-seq
 ;   "Returns a lazy sequence of the nodes in a tree, via a depth-first walk.
@@ -6833,22 +6835,23 @@
 ;                  (cons (f idx (first s)) (mapi (inc idx) (rest s)))))))]
 ;     (mapi 0 coll)))
 
-; (defn keep
-;   "Returns a lazy sequence of the non-nil results of (f item). Note,
-;   this means false return values will be included.  f must be free of
-;   side-effects.  Returns a transducer when no collection is provided."
-;   {:added "1.2"
-;    :static true}
-;   ([f]
-;    (fn [f1]
-;      (fn
-;        ([] (f1))
-;        ([result] (f1 result))
-;        ([result input]
-;           (let [v (f input)]
-;             (if (nil? v)
-;               result
-;               (f1 result v)))))))
+(defn keep
+  "Returns a lazy sequence of the non-nil results of (f item). Note,
+  this means false return values will be included.  f must be free of
+  side-effects.  Returns a transducer when no collection is provided."
+  {:added "1.2"
+   :static true}
+  ([f]
+   (fn [f1]
+     (fn
+       ([] (f1))
+       ([result] (f1 result))
+       ([result input]
+          (let [v (f input)]
+            (if (nil? v)
+              result
+              (f1 result v)))))))
+  )
 ;   ([f coll]
 ;    (lazy-seq
 ;     (when-let [s (seq coll)]
@@ -7106,12 +7109,12 @@
 ;            ~@(interleave (repeat g) (map pstep forms))]
 ;        ~g)))
 
-; (defn ^:private preserving-reduced
-;   [f1]
-;   #(let [ret (f1 %1 %2)]
-;      (if (reduced? ret)
-;        (reduced ret)
-;        ret)))
+(defn ^:private preserving-reduced
+  [f1]
+  #(let [ret (f1 %1 %2)]
+     (if (reduced? ret)
+       (reduced ret)
+       ret)))
 
 ; (defn cat
 ;   "A transducer which concatenates the contents of each input, which must be a
@@ -7125,23 +7128,23 @@
 ;       ([result input]
 ;          (reduce rf1 result input)))))
 
-; (defn dedupe
-;   "Returns a lazy sequence removing consecutive duplicates in coll.
-;   Returns a transducer when no collection is provided."
-;   {:added "1.7"}
-;   ([]
-;    (fn [f1]
-;      (let [pv (volatile! ::none)]
-;        (fn
-;          ([] (f1))
-;          ([result] (f1 result))
-;          ([result input]
-;             (let [prior @pv]
-;               (vreset! pv input)
-;               (if (= prior input)
-;                 result
-;                 (f1 result input))))))))
-;   ([coll] (sequence (dedupe) coll)))
+(defn dedupe
+  "Returns a lazy sequence removing consecutive duplicates in coll.
+  Returns a transducer when no collection is provided."
+  {:added "1.7"}
+  ([]
+   (fn [f1]
+     (let [pv (volatile! ::none)]
+       (fn
+         ([] (f1))
+         ([result] (f1 result))
+         ([result input]
+            (let [prior @pv]
+              (vreset! pv input)
+              (if (= prior input)
+                result
+                (f1 result input))))))))
+  ([coll] (sequence (dedupe) coll)))
 
 ; (defn random-sample
 ;   "Returns items from coll with random probability of prob (0.0 -

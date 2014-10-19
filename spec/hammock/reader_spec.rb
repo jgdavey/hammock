@@ -99,7 +99,7 @@ describe Hammock::Reader do
 
   it "parses implicitly namespaced keywords" do
     result = read_string '::foo'
-    expect(result).to eq :":foo"
+    expect(result).to eq :"clojure.core/foo"
   end
 
   it "parses complex nested data structures" do

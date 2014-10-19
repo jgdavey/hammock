@@ -80,6 +80,10 @@ module Hammock
       end
     end
 
+    def inspect
+      "#<Hammock::Function #@internal_name>"
+    end
+
     protected
 
     attr_reader :ns, :env, :internal_name
