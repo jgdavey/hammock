@@ -49,17 +49,18 @@ module Hammock
     def _macroexpand1(env, form)
       return form, false unless form.is_a?(List)
       sym = form.car
-      if Hammock::Symbol === sym
-        if sym.name == DOT.name
-          return form, false
-        elsif sym.name.start_with?(DOT.name)
-          form = expand_method(form)
-          return form, false
-        elsif sym.name.end_with?(DOT.name)
-          form = expand_new(form)
-          return form, false
-        end
+      return form, false unless Hammock::Symbol === sym
+
+      if sym.name == DOT.name
+        return form, false
+      elsif sym.name.start_with?(DOT.name)
+        form = expand_method(form)
+        return form, false
+      elsif sym.name.end_with?(DOT.name)
+        form = expand_new(form)
+        return form, false
       end
+
       if item = find_var(env, sym)
         dreffed = item.deref
         if macro?(item) || macro?(dreffed)
@@ -79,6 +80,7 @@ module Hammock
     end
 
     def macroexpand(env, form)
+      return form unless List === form && Hammock::Symbol === form.first
       ret = true
       spec = nil
       while ret && !spec
@@ -88,14 +90,17 @@ module Hammock
       form
     end
 
-    def evaluate(env, list)
-      if s = special(list)
-        return s.call(list, env, *list.cdr)
+    def compile(env, form)
+      return form unless List === form
+      new_form = form.to_a.map do |f|
+        compile(env, f)
       end
+      list = Sequence.from_array new_form
+      macroexpand(env, list)
+    end
 
-      if Hammock::Symbol === list.car
-        list = macroexpand(env, list)
-      end
+    def evaluate(env, list)
+      list = macroexpand(env, list)
 
       unless list.is_a?(List)
         return list
