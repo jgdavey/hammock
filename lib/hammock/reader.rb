@@ -6,7 +6,6 @@ require 'hammock/set'
 require 'hammock/sequence'
 require 'hammock/symbol'
 require 'hammock/vector'
-require 'hammock/quote'
 
 module Hammock
   class Reader
@@ -349,7 +348,7 @@ module Hammock
     end
 
     def read_quoted(io, quote_mark)
-      Hammock::Quote.new read(io)
+      read_wrapped(io, QUOTE)
     end
 
     def read_deref(io, at)
@@ -384,7 +383,7 @@ module Hammock
       ret = nil
       return unless form
       if RT.special(form)
-        ret = Hammock::Quote.new form
+        ret = RT.list(QUOTE, form)
       elsif Hammock::Symbol === form
         sym = form
         if !sym.ns && sym.name.end_with?("#")
@@ -405,7 +404,7 @@ module Hammock
             sym
           end
         end
-        ret = Hammock::Quote.new sym
+        ret = RT.list(QUOTE, sym)
       elsif form.respond_to?(:first)
         if form.first == UNQUOTE
           ret = form.cdr.car
@@ -428,7 +427,7 @@ module Hammock
       elsif String === form || Numeric === form || ::Symbol === form
         ret = form
       else
-        ret = Hammock::Quote.new(form)
+        ret = RT.list(QUOTE, form)
       end
       ret
     end

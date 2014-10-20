@@ -166,13 +166,13 @@ describe Hammock::Reader do
   it "reads quoted symbols" do
     str = "'foo"
     result = read_string str
-    expect(result).to eq Hammock::Quote.new Hammock::Symbol.intern("foo")
+    expect(result).to eq Hammock::Sequence.from_array [Hammock::Symbol.intern("quote"), Hammock::Symbol.intern("foo")]
   end
 
   it "reads quoted lists" do
     str = "'(foo bar)"
     result = read_string str
-    expected = Hammock::Quote.new(Hammock::Sequence.from_array [Hammock::Symbol.intern("foo"), Hammock::Symbol.intern("bar")])
+    expected = Hammock::Sequence.from_array([Hammock::Symbol.intern("quote"), Hammock::Sequence.from_array([Hammock::Symbol.intern("foo"), Hammock::Symbol.intern("bar")])])
     expect(result).to eq expected
   end
 
@@ -207,7 +207,7 @@ describe Hammock::Reader do
     str = '`foo'
     result = read_string(str)
     expected = Hammock::Symbol.intern("clojure.core", "foo")
-    expect(result.value).to eq expected
+    expect(result.tail.first).to eq expected
   end
 
   it "reads unquotes" do

@@ -113,6 +113,7 @@ module Hammock
         "in-ns" => InNS.new,
         "list"  => List.new,
         "."     => Host.new,
+        "quote" => QuoteExpr.new,
         "var"   => VarExpr.new
       }
     end
@@ -410,6 +411,12 @@ module Hammock
         else
           raise "Unable to find var #{sym} in namespace #{namespace.name}"
         end
+      end
+    end
+
+    class QuoteExpr
+      def call(list, env, form)
+        form
       end
     end
   end
