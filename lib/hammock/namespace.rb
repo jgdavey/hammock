@@ -13,7 +13,7 @@ module Hammock
     end
 
     def self.name_only(name)
-      if name.respond_to?(:name)
+      if Hammock::Symbol === name
         name.name
       else
         name

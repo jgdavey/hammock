@@ -181,6 +181,8 @@ module Hammock
         nil
       when Hammock::List, Hammock::LazyTransformer
         sequence.seq
+      when Vector, Map, Set
+        Sequence.from_array sequence.to_a
       else
         if sequence.respond_to?(:to_a)
           list = Sequence.from_array sequence.to_a
