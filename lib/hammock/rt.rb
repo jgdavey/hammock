@@ -128,11 +128,15 @@ module Hammock
     end
 
     def self.cons(val, sequence)
-      s = seq(sequence)
-      if s
-        s.cons(val)
+      case sequence
+      when Hammock::List, LazyTransformer
+        sequence.cons(val)
       else
-        Sequence.new(val)
+        if s = seq(sequence)
+          s.cons(val)
+        else
+          Sequence.new(val)
+        end
       end
     end
 
@@ -179,7 +183,7 @@ module Hammock
       case sequence
       when NilClass
         nil
-      when Hammock::List, Hammock::LazyTransformer
+      when Hammock::List, LazyTransformer, LazySequence
         sequence.seq
       when Vector, Map, Set
         Sequence.from_array sequence.to_a

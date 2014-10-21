@@ -2760,6 +2760,25 @@
 ;                       (when (comp i end)
 ;                         (range i end step)))))))))
 
+(defn range
+  "Returns a lazy seq of nums from start (inclusive) to end
+  (exclusive), by step, where start defaults to 0, step to 1, and end to
+  infinity. When step is equal to 0, returns an infinite sequence of
+  start. When start is equal to end, returns empty list."
+  {:added "1.0"
+   :static true}
+  ([] (iterate inc 0))
+  ([end] (range 0 end 1))
+  ([start end] (range start end 1))
+  ([start end step]
+   (lazy-seq
+    (let [comp (cond (or (zero? step) (= start end)) not=
+                     (pos? step) <
+                     (neg? step) >)]
+      (when (comp start end)
+        (cons start (range (+ start step) end step)))))))
+
+
 (defn merge
   "Returns a map that consists of the rest of the maps conj-ed onto
   the first.  If a key occurs in more than one map, the mapping from
