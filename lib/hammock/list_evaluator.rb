@@ -1,6 +1,7 @@
 require 'hammock/symbol'
 module Hammock
   module ListEvaluator
+    CompileError = Class.new(StandardError)
     DOT = Symbol.intern(".")
     NEW = Symbol.intern("new")
     extend self
@@ -64,7 +65,11 @@ module Hammock
       if item = find_var(env, sym)
         dreffed = item.deref
         if macro?(item) || macro?(dreffed)
-          form = dreffed.call(form, env, *form.cdr)
+          begin
+            form = dreffed.call(form, env, *form.cdr)
+          rescue => e
+            raise CompileError, "Problem expanding macro: #{form.meta}, #{form.inspect}. Error: #{e}"
+          end
           return form, true
         else
           return form, false
@@ -92,10 +97,11 @@ module Hammock
 
     def compile(env, form)
       return form unless List === form
+      meta = form.meta
       new_form = form.to_a.map do |f|
         compile(env, f)
       end
-      list = Sequence.from_array new_form
+      list = Sequence.from_array(new_form).with_meta(meta)
       macroexpand(env, list)
     end
 

@@ -20,7 +20,7 @@ module Hammock
     end
 
     def initialize(head, tail = Hammock::EmptyList, meta=nil)
-      @meta = nil
+      @meta = meta
       @head = head
       @tail = tail
     end
@@ -49,6 +49,10 @@ module Hammock
         $stderr.puts "ERROR: #{e.message} from #{meta[:line]}:#{meta[:column]}"
       end
       raise e
+    end
+
+    def with_meta(meta)
+      self.class.new(head, tail, meta)
     end
 
     def inspect
