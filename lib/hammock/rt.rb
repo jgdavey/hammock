@@ -241,6 +241,8 @@ module Hammock
       when String
         key = args.first
         sequence[key,1] if key < sequence
+      when Hammock::List
+        sequence.nth(*args)
       else
         sequence.fetch(*args)
       end
@@ -283,10 +285,10 @@ module Hammock
     class Def
       def call(_, env, sym, val=nil)
         ns = CURRENT_NS.deref
-        ns.intern(sym).tap do |var|
-          var.bind_root(val.evaluate(env))
-          var.meta = sym.meta
-        end
+        var = ns.find_var(sym) || ns.intern(sym)
+        var.bind_root(val.evaluate(env))
+        var.meta = sym.meta
+        var
       end
     end
 

@@ -9,6 +9,7 @@ module Hammock
   module List
     include IPersistentCollection
     include Hamster::Enumerable
+    Undefined = Object.new
 
     CADR = /^c([ad]+)r$/
 
@@ -83,6 +84,26 @@ module Hammock
         list = list.tail
       end
       list.head
+    end
+
+    def drop(number)
+      Stream.new do
+        list = self
+        while !list.empty? && number > 0
+          number -= 1
+          list = list.tail
+        end
+        list
+      end
+    end
+
+    def nth(n, default=Undefined)
+      res = drop(n)
+      if res.empty? && default != Undefined
+        default
+      else
+        res.head
+      end
     end
 
     def chunk(number)

@@ -145,7 +145,7 @@ module Hammock
           map.fetch(fn, default)
         end
       else
-        raise "What? #{fn}, #{fn.class}"
+        raise "What? #{head.inspect}, #{fn.inspec}, #{list}, #{list.meta}"
       end
     end
   end

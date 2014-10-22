@@ -4404,10 +4404,10 @@
 ;     `(let [iter# ~(emit-bind (to-groups seq-exprs))]
 ;         (iter# ~(second seq-exprs)))))
 
-; (defmacro comment
-;   "Ignores body, yields nil"
-;   {:added "1.0"}
-;   [& body])
+(defmacro comment
+  "Ignores body, yields nil"
+  {:added "1.0"}
+  [& body])
 
 ; (defmacro with-out-str
 ;   "Evaluates exprs in a context in which *out* is bound to a fresh
@@ -4598,22 +4598,22 @@
   [name & decls]
     (list* `defn (with-meta name (assoc (meta name) :private true)) decls))
 
-; (defn tree-seq
-;   "Returns a lazy sequence of the nodes in a tree, via a depth-first walk.
-;    branch? must be a fn of one arg that returns true if passed a node
-;    that can have children (but may not).  children must be a fn of one
-;    arg that returns a sequence of the children. Will only be called on
-;    nodes for which branch? returns true. Root is the root node of the
-;   tree."
-;   {:added "1.0"
-;    :static true}
-;    [branch? children root]
-;    (let [walk (fn walk [node]
-;                 (lazy-seq
-;                  (cons node
-;                   (when (branch? node)
-;                     (mapcat walk (children node))))))]
-;      (walk root)))
+(defn tree-seq
+  "Returns a lazy sequence of the nodes in a tree, via a depth-first walk.
+   branch? must be a fn of one arg that returns true if passed a node
+   that can have children (but may not).  children must be a fn of one
+   arg that returns a sequence of the children. Will only be called on
+   nodes for which branch? returns true. Root is the root node of the
+  tree."
+  {:added "1.0"
+   :static true}
+   [branch? children root]
+   (let [walk (fn walk [node]
+                (lazy-seq
+                 (cons node
+                  (when (branch? node)
+                    (mapcat walk (children node))))))]
+     (walk root)))
 
 ; (defn file-seq
 ;   "A tree seq on java.io.Files"
@@ -4857,13 +4857,13 @@
 ;        (alter-meta! (var ~name) assoc :inline (fn ~name ~args ~expr))
 ;        (var ~name))))
 
-; (defn empty
-;   "Returns an empty collection of the same category as coll, or nil"
-;   {:added "1.0"
-;    :static true}
-;   [coll]
-;   (when (instance? clojure.lang.IPersistentCollection coll)
-;     (.empty ^clojure.lang.IPersistentCollection coll)))
+(defn empty
+  "Returns an empty collection of the same category as coll, or nil"
+  {:added "1.0"
+   :static true}
+  [coll]
+  (when (instance? Hammock.IPersistentCollection coll)
+    (.empty coll)))
 
 ; (defmacro amap
 ;   "Maps an expression across an array a, using an index named idx, and

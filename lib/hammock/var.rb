@@ -41,6 +41,7 @@ module Hammock
     end
 
     def bind_root(val)
+      @rev += 1
       @root = val
     end
 
