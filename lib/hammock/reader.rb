@@ -154,7 +154,7 @@ module Hammock
     end
 
     def read_list(io, char)
-      meta = Map.from_hash(line: io.line_number, column: io.column_number)
+      meta = Map.from_hash(line: io.line_number, column: io.column_number, file: io.filename)
       list = read_delimited_list(")", io)
       Sequence.from_array(list).with_meta(meta)
     end
