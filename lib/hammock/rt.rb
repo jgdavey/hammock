@@ -47,6 +47,7 @@ module Hammock
 
     def self.global_env
       @global_env = Hammock::Environment.new(
+        "__stack__" => Vector.new.add("(root)"),
         "*ns*" => CURRENT_NS,
         "*in*" => IN,
         "*out*" => OUT,
@@ -352,7 +353,7 @@ module Hammock
         end
 
         Function.create(name, CURRENT_NS.deref, env, arities).tap do |fn|
-          fn.meta = list.meta
+          fn.meta = list.meta if list.meta
         end
       end
     end

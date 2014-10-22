@@ -3,6 +3,7 @@ require 'hammock/ideref'
 module Hammock
   class Var
     include Meta
+    include IFn
 
     attr_reader :ns, :symbol, :root
 
@@ -21,6 +22,11 @@ module Hammock
       @dynamic = false
       @public = true
       @rev = 0
+    end
+
+    def trace
+      return unless meta
+      "#{meta[:file]}:#{meta[:line]} in #@symbol"
     end
 
     def macro!
@@ -55,6 +61,10 @@ module Hammock
 
     def evaluate(env)
       @root
+    end
+
+    def call(*args)
+      @root.call(*args)
     end
 
     def to_s

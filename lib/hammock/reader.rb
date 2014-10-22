@@ -142,15 +142,18 @@ module Hammock
           break ret
         else
           token = read_token(io, char)
-          break interpret_token(token)
+          break interpret_token(io, token)
         end
 
         break if io.eof?
       end
     end
 
-    def interpret_token(token)
-      TOKENS.fetch(token) { Symbol.intern(token) }
+    def interpret_token(io, token)
+      TOKENS.fetch(token) do
+        meta = Map.from_hash(line: io.line_number, column: io.column_number, file: io.filename)
+        Symbol.intern(token).with_meta(meta)
+      end
     end
 
     def read_list(io, char)
@@ -491,6 +494,8 @@ module Hammock
       meta = read(io)
       if ::Symbol === meta
         meta = Map.from_array [meta, true]
+      elsif Hammock::Symbol === meta
+        return
       end
       following = read(io)
 
@@ -498,7 +503,7 @@ module Hammock
         raise "#{following.inspect} does not implement metadata"
       end
 
-      if following.meta
+      if Map === following.meta
         meta = following.meta.merge(meta)
       end
 
@@ -536,7 +541,7 @@ module Hammock
 
     def read_arg(io, pct)
       unless Thread.current[:arg_env]
-        return interpret_token(read_token(io, '%'))
+        return interpret_token(io, read_token(io, '%'))
       end
       char = io.getc
       io.ungetc(char)

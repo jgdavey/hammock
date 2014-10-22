@@ -1,7 +1,8 @@
 require 'hammock/symbol'
+require 'hammock/errors'
+
 module Hammock
   module ListEvaluator
-    CompileError = Class.new(StandardError)
     DOT = Symbol.intern(".")
     NEW = Symbol.intern("new")
     extend self
@@ -19,6 +20,7 @@ module Hammock
     end
 
     def expand_method(form)
+      meta = form.meta
       method, target, *args = *form
       args = Sequence.from_array(args)
       method = Symbol.intern(method.name[1..-1])
@@ -27,10 +29,11 @@ module Hammock
       else
         args = method
       end
-      Sequence.from_array [DOT, target, args]
+      Sequence.from_array([DOT, target, args]).with_meta(meta)
     end
 
     def expand_new(form)
+      meta = form.meta
       klass, *args = *form
       args = Sequence.from_array(args)
       klass = Symbol.intern(klass.name[0..-2])
@@ -39,7 +42,7 @@ module Hammock
       else
         args = NEW
       end
-      Sequence.from_array [DOT, klass, args]
+      Sequence.from_array([DOT, klass, args]).with_meta(meta)
     end
 
     def macroexpand1(form, env=RT.global_env)
@@ -51,14 +54,18 @@ module Hammock
       return form, false unless form.is_a?(List)
       sym = form.car
       return form, false unless Hammock::Symbol === sym
+      meta = form.meta
 
       if item = find_var(env, sym)
         dreffed = item.deref
         if macro?(item) || macro?(dreffed)
           begin
             form = dreffed.call(form, env, *form.cdr)
+            if meta && Meta === form
+              form = form.with_meta(meta)
+            end
           rescue => e
-            raise CompileError, "Problem expanding macro: #{form.meta}, #{form.inspect}. Error: #{e}"
+            raise Hammock::CompileError.new(form, "Error compiling: #{e}")
           end
           return form, true
         else
@@ -127,6 +134,10 @@ module Hammock
 
       fn = head.evaluate(env)
 
+      if fn.respond_to?(:trace) && (t = fn.trace)
+        env = env.bind("__stack__", env["__stack__"].add(t))
+      end
+
       if Var === fn
         fn = fn.deref
       end
@@ -134,18 +145,22 @@ module Hammock
       case fn
       when IFn
         args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
-        fn.call *args
+        begin
+          fn.call *args
+        rescue => e
+          raise e.class, e.message, (env["__stack__"].to_a.reverse)
+        end
       when ::Symbol
         args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
         if args.count > 2
-          raise ArgumentError, "more than one arg passed as argument to Keyword #{fn}"
+          raise ArgumentError, "more than one arg passed as argument to Keyword #{fn}", env["__stack__"].to_a
         end
         map, default = *args
         if ILookup === map
           map.fetch(fn, default)
         end
       else
-        raise "What? #{head.inspect}, #{fn.inspec}, #{list}, #{list.meta}"
+        raise Error, "What? #{head.inspect}, #{fn.inspect}, #{list}, #{list.meta}"
       end
     end
   end

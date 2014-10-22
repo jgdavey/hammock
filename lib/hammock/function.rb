@@ -56,11 +56,20 @@ module Hammock
       "#{ns.name}/#@internal_name"
     end
 
+    def meta=(meta)
+      @meta = meta
+    end
+
+    def trace
+      return unless meta
+      "#{meta[:file]}:#{meta[:line]} in #@internal_name"
+    end
+
     def call(*args)
       arity = find_arity!(*args)
 
       env = @env.bind("__namespace__", @ns)
-      env = @env.bind(@internal_name, self)
+      env = env.bind(@internal_name, self)
 
       locals = args
 

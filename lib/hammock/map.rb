@@ -139,11 +139,11 @@ module Hammock
     end
 
     def values
-      reduce(Hammock::EmptyList) { |values, key, value| values.cons(value) }
+      reduce(Hammock::EmptyList.new) { |values, key, value| values.cons(value) }
     end
 
     def seq
-      @trie.reduce(Hammock::EmptyList) { |entries, entry| entries.cons(entry)}
+      @trie.reduce(Hammock::EmptyList.new) { |entries, entry| entries.cons(entry)}
     end
 
     def cons(obj)

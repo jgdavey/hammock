@@ -71,6 +71,12 @@ module Hammock
     alias cons add
     alias conj add
 
+    def concat(arraylike)
+      arraylike.to_a.reduce(self) do |v, item|
+        v.add(item)
+      end
+    end
+
     def set(index, item = Undefined)
       return set(index, yield(get(index))) if item.equal?(Undefined)
       raise IndexError if empty? or index == @size

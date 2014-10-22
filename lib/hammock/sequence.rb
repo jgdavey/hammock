@@ -44,11 +44,6 @@ module Hammock
 
     def evaluate(env)
       ListEvaluator.evaluate(env, self)
-    rescue => e
-      if meta && meta[:line]
-        $stderr.puts "ERROR: #{e.message} from #{meta[:line]}:#{meta[:column]}"
-      end
-      raise e
     end
 
     def with_meta(meta)
