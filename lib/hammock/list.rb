@@ -2,7 +2,7 @@ require 'thread'
 require 'forwardable'
 require 'hamster/enumerable'
 require 'hammock/set'
-require 'hammock/list_evaluator'
+require 'hammock/compiler'
 require 'hammock/ipersistent_collection'
 
 module Hammock

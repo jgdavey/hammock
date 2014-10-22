@@ -2,10 +2,10 @@ require 'hammock/symbol'
 require 'hammock/errors'
 
 module Hammock
-  module ListEvaluator
+  module Compiler
+    extend self
     DOT = Symbol.intern(".")
     NEW = Symbol.intern("new")
-    extend self
 
     def namespace(env, sym)
       env["__namespace__"] || sym.ns || RT::CURRENT_NS.deref

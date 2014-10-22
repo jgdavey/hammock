@@ -43,7 +43,7 @@ module Hammock
     end
 
     def evaluate(env)
-      ListEvaluator.evaluate(env, self)
+      Compiler.evaluate(env, self)
     end
 
     def with_meta(meta)

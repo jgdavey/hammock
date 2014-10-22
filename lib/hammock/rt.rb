@@ -95,7 +95,7 @@ module Hammock
         file = File.open(file)
       end
       Reader.new.read_all(file) do |form|
-        ListEvaluator.compile(global_env, form).evaluate(global_env)
+        Compiler.compile(global_env, form).evaluate(global_env)
       end
     ensure
       file.close
