@@ -10,35 +10,38 @@ require 'hammock/vector'
 module Hammock
   class Reader
     class LineNumberingIO < SimpleDelegator
-      attr_reader :line_number, :column_number
+      attr_reader :line_number, :column_number, :filename
 
-      NEWLINE = "\n".freeze
+      NEWLINE = $/ # line sep
 
       def initialize(io)
         @column_number = 0
         @line_number = 1
-        @char = nil
+        @filename = if File === io
+                      File.absolute_path(io)
+                    else
+                      "(input)"
+                    end
         super
       end
 
       def getc
         @column_number += 1
-        @char = __getobj__.getc
-        if @char == NEWLINE
+        char = __getobj__.getc
+        if char == NEWLINE
           @line_number += 1
           @last_line_length = @column_number
           @column_number = 0
         end
-        @char
+        char
       end
 
-      def backc
-        __getobj__.seek(-1, IO::SEEK_CUR)
-        if @char == NEWLINE
+      def ungetc(char)
+        __getobj__.ungetc(char)
+        if char == NEWLINE
           @line_number -= 1
           @column_number = @last_line_length
         end
-        @char = nil
       end
     end
 
@@ -104,10 +107,6 @@ module Hammock
 
     def terminating_macro?(char)
       macro?(char) && char != ?# && char != ?' && char != ?%
-    end
-
-    def back(io)
-      io.backc
     end
 
     def ensure_line_numbering(io)
@@ -194,7 +193,7 @@ module Hammock
             a << ret
           end
         else
-          back(io)
+          io.ungetc(char)
           a << read(io)
         end
       end
@@ -213,13 +212,13 @@ module Hammock
         prefix = RT::CURRENT_NS.deref.name
         keyword << prefix << "/"
       else
-        back(io)
+        io.ungetc(char)
       end
 
       loop do
         char = io.getc
         if whitespace?(char) || terminating_macro?(char) || !char
-          back(io)
+          io.ungetc(char)
           break
         end
         keyword << char
@@ -232,7 +231,7 @@ module Hammock
       loop do
         char = io.getc
         if !char
-          back(io)
+          io.ungetc(char)
           break
         end
 
@@ -271,7 +270,7 @@ module Hammock
         char = io.getc
 
         if !char
-          back(io)
+          io.ungetc(char)
           break
         end
 
@@ -365,7 +364,7 @@ module Hammock
         ret = read(io)
         RT.list(UNQUOTE_SPLICING, ret)
       else
-        io.backc
+        io.ungetc(char)
         ret = read(io)
         RT.list(UNQUOTE, ret)
       end
@@ -464,7 +463,7 @@ module Hammock
 
     def read_function(io, paren)
       Thread.current[:arg_env] = Map.new
-      io.backc
+      io.ungetc(paren)
       form = read(io)
       args = Vector.new
       argsyms = Thread.current[:arg_env]
@@ -511,7 +510,7 @@ module Hammock
       loop do
         char = io.getc
         if !char || whitespace?(char) || terminating_macro?(char)
-          back(io)
+          io.ungetc(char)
           break
         end
         chars << char
@@ -540,7 +539,7 @@ module Hammock
         return interpret_token(read_token(io, '%'))
       end
       char = io.getc
-      io.backc
+      io.ungetc(char)
 
       # % alone is first arg
       if whitespace?(char) || terminating_macro?(char)
