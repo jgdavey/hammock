@@ -52,16 +52,6 @@ module Hammock
       sym = form.car
       return form, false unless Hammock::Symbol === sym
 
-      if sym.name == DOT.name
-        return form, false
-      elsif sym.name.start_with?(DOT.name)
-        form = expand_method(form)
-        return form, false
-      elsif sym.name.end_with?(DOT.name)
-        form = expand_new(form)
-        return form, false
-      end
-
       if item = find_var(env, sym)
         dreffed = item.deref
         if macro?(item) || macro?(dreffed)
@@ -74,6 +64,14 @@ module Hammock
         else
           return form, false
         end
+      elsif sym.name == DOT.name
+        return form, false
+      elsif sym.name.start_with?(DOT.name)
+        form = expand_method(form)
+        return form, false
+      elsif sym.name.end_with?(DOT.name)
+        form = expand_new(form)
+        return form, false
       else
         return form, false
       end
