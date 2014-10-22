@@ -96,13 +96,22 @@ module Hammock
     end
 
     def compile(env, form)
-      return form unless List === form
+      return form unless IPersistentCollection === form
       meta = form.meta
       new_form = form.to_a.map do |f|
         compile(env, f)
       end
-      list = Sequence.from_array(new_form).with_meta(meta)
-      macroexpand(env, list)
+      case form
+      when List
+        list = Sequence.from_array(new_form).with_meta(meta)
+        macroexpand(env, list)
+      when Vector
+        Vector.from_array(new_form).with_meta(meta)
+      when Map
+        Map.from_pairs(new_form).with_meta(meta)
+      when Set
+        Set.from_array(new_form).with_meta(meta)
+      end
     end
 
     def evaluate(env, list)

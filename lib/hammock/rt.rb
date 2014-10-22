@@ -150,6 +150,27 @@ module Hammock
       end
     end
 
+    def self.dissoc(sequence, key)
+      if sequence
+        sequence.dissoc(key)
+      end
+    end
+
+    def self.get(sequence, key, not_found=nil)
+      if sequence
+        sequence.val_at(key, not_found)
+      end
+    end
+
+    def self.contains?(sequence, key)
+      case sequence
+      when Vector
+        sequence.count > key
+      when Map, Set
+        sequence.has_key?(key)
+      end
+    end
+
     def self.first(sequence)
       if coll = seq(sequence)
         coll.first
@@ -183,9 +204,9 @@ module Hammock
       case sequence
       when NilClass
         nil
-      when Hammock::List, LazyTransformer, LazySequence
+      when Hammock::List, LazyTransformer, LazySequence, Map
         sequence.seq
-      when Vector, Map, Set
+      when Vector, Set
         Sequence.from_array sequence.to_a
       else
         if sequence.respond_to?(:to_a)

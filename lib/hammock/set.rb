@@ -17,9 +17,7 @@ module Hammock
     Undefined = Object.new
 
     def self.alloc_from(other, meta=nil)
-      new(meta).tap do |coll|
-        coll.instance_variable_set(:@trie, other.instance_variable_get(:@trie))
-      end
+      new(meta, other.instance_variable_get(:@trie))
     end
 
     def self.create(coll)
@@ -60,6 +58,7 @@ module Hammock
       transform_unless(trie.equal?(@trie)) { @trie = trie }
     end
     alias remove delete
+    alias disjoin delete
 
     def each
       return self unless block_given?

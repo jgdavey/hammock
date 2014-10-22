@@ -117,6 +117,7 @@ module Hammock
       transform_unless(trie.equal?(@trie)) { @trie = trie }
     end
     alias without delete
+    alias dissoc delete
 
     def each
       return self unless block_given?
@@ -176,6 +177,15 @@ module Hammock
     def hash
       reduce(0) { |hash, key, value| (hash << 32) - hash + key.hash + value.hash }
     end
+
+    def to_a
+      ret = []
+      each do |k,v|
+        ret << [k,v]
+      end
+      ret
+    end
+    alias pairs to_a
 
     def evaluate(env)
       ret = []

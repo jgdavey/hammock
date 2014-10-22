@@ -190,6 +190,8 @@ module Hammock
         self
       end
 
+      def meta; end
+
       def empty?
         true
       end
