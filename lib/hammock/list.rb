@@ -69,7 +69,7 @@ module Hammock
     end
 
     def clear
-      EmptyList
+      EmptyList.new
     end
 
     def join(sep = "")
@@ -131,7 +131,7 @@ module Hammock
       return group_by { |item| item } unless block_given?
       reduce(EmptyHash) do |hash, item|
         key = yield(item)
-        hash.put(key, (hash.get(key) || EmptyList).cons(item))
+        hash.put(key, (hash.get(key) || EmptyList.new).cons(item))
       end
     end
 
@@ -158,7 +158,7 @@ module Hammock
     end
 
     def empty
-      EmptyList
+      EmptyList.new
     end
 
     def dup
@@ -191,36 +191,37 @@ module Hammock
     end
   end
 
-  module EmptyList
-    class << self
-      include List
+  class EmptyList
+    include List
+    include Meta
 
-      def head
-        nil
-      end
-
-      def tail
-        self
-      end
-
-      def seq
-        nil
-      end
-
-      def with_meta(*)
-        self
-      end
-
-      def meta; end
-
-      def empty?
-        true
-      end
-
-      def inspect
-        "()"
-      end
-      alias to_s inspect
+    def initialize(meta=nil)
+      @meta = meta
     end
+
+    def head
+      nil
+    end
+
+    def tail
+      self
+    end
+
+    def seq
+      nil
+    end
+
+    def with_meta(meta)
+      self.class.new(meta)
+    end
+
+    def empty?
+      true
+    end
+
+    def inspect
+      "()"
+    end
+    alias to_s inspect
   end
 end

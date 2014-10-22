@@ -67,7 +67,7 @@ module Hammock
     def more
       seq unless stepper.nil?
       if @rest.nil?
-        EmptyList
+        EmptyList.new
       else
         @rest.seq
       end

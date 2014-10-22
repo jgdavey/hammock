@@ -196,7 +196,7 @@ module Hammock
       if coll = seq(sequence)
         coll.tail
       else
-        EmptyList
+        EmptyList.new
       end
     end
 

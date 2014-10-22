@@ -4,7 +4,7 @@ describe Hammock::Sequence do
   describe '::from_array' do
     it 'when empty is empty' do
       empty = described_class.from_array([])
-      expect(empty).to eq(Hammock::EmptyList)
+      expect(empty).to eq(Hammock::EmptyList.new)
       expect(empty.count).to eq(0)
       expect(empty.to_a).to eq([])
     end

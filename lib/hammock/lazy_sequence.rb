@@ -46,7 +46,7 @@ module Hammock
 
     def more
       seq
-      return EmptyList if @s.nil?
+      return EmptyList.new if @s.nil?
       @s.more
     end
 

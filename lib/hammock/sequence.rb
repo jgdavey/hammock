@@ -9,8 +9,8 @@ module Hammock
     attr_reader :head, :tail
 
     def self.from_array(array)
-      return EmptyList if array.nil? || array.empty?
-      array.to_a.reverse.inject(EmptyList) do |prev, el|
+      return EmptyList.new if array.nil? || array.empty?
+      array.to_a.reverse.inject(EmptyList.new) do |prev, el|
         new(el, prev)
       end
     end
@@ -19,7 +19,7 @@ module Hammock
       new(other.head, other.tail, meta)
     end
 
-    def initialize(head, tail = Hammock::EmptyList, meta=nil)
+    def initialize(head, tail = Hammock::EmptyList.new, meta=nil)
       @meta = meta
       @head = head
       @tail = tail
