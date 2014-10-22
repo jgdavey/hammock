@@ -1477,7 +1477,7 @@
 ;   [options & valid-keys]
 ;   (when (seq (apply disj (apply hash-set (keys options)) valid-keys))
 ;     (throw
-;       (IllegalArgumentException.
+;       (ArgumentError.
 ;         (apply str "Only these options are valid: "
 ;           (first valid-keys)
 ;           (map #(str ", " %) (rest valid-keys)))))))
@@ -3578,7 +3578,7 @@
 ;                                 (with-open ~(subvec bindings 2) ~@body)
 ;                                 (finally
 ;                                   (. ~(bindings 0) close))))
-;     :else (throw (IllegalArgumentException.
+;     :else (throw (ArgumentError.
 ;                    "with-open only allows Symbols in bindings"))))
 
 ; (defmacro doto
@@ -3623,7 +3623,6 @@
          ret# ~expr]
      (prn (str "Elapsed time: " (* (- (-now) start#) 1000.0) " msecs"))
      ret#))
-
 
 
 ; (import '(java.lang.reflect Array))
@@ -4028,23 +4027,23 @@
       (when-let [s (seq coll)]
         (cons (first s) (take-nth n (drop n s)))))))
 
-; (defn interleave
-;   "Returns a lazy seq of the first item in each coll, then the second etc."
-;   {:added "1.0"
-;    :static true}
-;   ([] ())
-;   ([c1] (lazy-seq c1))
-;   ([c1 c2]
-;      (lazy-seq
-;       (let [s1 (seq c1) s2 (seq c2)]
-;         (when (and s1 s2)
-;           (cons (first s1) (cons (first s2)
-;                                  (interleave (rest s1) (rest s2))))))))
-;   ([c1 c2 & colls]
-;      (lazy-seq
-;       (let [ss (map seq (conj colls c2 c1))]
-;         (when (every? identity ss)
-;           (concat (map first ss) (apply interleave (map rest ss))))))))
+(defn interleave
+  "Returns a lazy seq of the first item in each coll, then the second etc."
+  {:added "1.0"
+   :static true}
+  ([] ())
+  ([c1] (lazy-seq c1))
+  ([c1 c2]
+     (lazy-seq
+      (let [s1 (seq c1) s2 (seq c2)]
+        (when (and s1 s2)
+          (cons (first s1) (cons (first s2)
+                                 (interleave (rest s1) (rest s2))))))))
+  ([c1 c2 & colls]
+     (lazy-seq
+      (let [ss (map seq (conj colls c2 c1))]
+        (when (every? identity ss)
+          (concat (map first ss) (apply interleave (map rest ss))))))))
 
 ; (defn var-get
 ;   "Gets the value in the var object"
@@ -4187,135 +4186,135 @@
      (even? (count bindings)) "an even number of forms in binding vector")
   `(let* ~(destructure bindings) ~@body))
 
-; (defn ^{:private true}
-;   maybe-destructured
-;   [params body]
-;   (if (every? symbol? params)
-;     (cons params body)
-;     (loop [params params
-;            new-params (with-meta [] (meta params))
-;            lets []]
-;       (if params
-;         (if (symbol? (first params))
-;           (recur (next params) (conj new-params (first params)) lets)
-;           (let [gparam (gensym "p__")]
-;             (recur (next params) (conj new-params gparam)
-;                    (-> lets (conj (first params)) (conj gparam)))))
-;         `(~new-params
-;           (let ~lets
-;             ~@body))))))
+(defn ^{:private true}
+  maybe-destructured
+  [params body]
+  (if (every? symbol? params)
+    (cons params body)
+    (loop [params params
+           new-params (with-meta [] (meta params))
+           lets []]
+      (if params
+        (if (symbol? (first params))
+          (recur (next params) (conj new-params (first params)) lets)
+          (let [gparam (gensym "p__")]
+            (recur (next params) (conj new-params gparam)
+                   (-> lets (conj (first params)) (conj gparam)))))
+        `(~new-params
+          (let ~lets
+            ~@body))))))
 
-; ;redefine fn with destructuring and pre/post conditions
-; (defmacro fn
-;   "params => positional-params* , or positional-params* & next-param
-;   positional-param => binding-form
-;   next-param => binding-form
-;   name => symbol
+;redefine fn with destructuring and pre/post conditions
+(defmacro fn
+  "params => positional-params* , or positional-params* & next-param
+  positional-param => binding-form
+  next-param => binding-form
+  name => symbol
 
-;   Defines a function"
-;   {:added "1.0", :special-form true,
-;    :forms '[(fn name? [params* ] exprs*) (fn name? ([params* ] exprs*)+)]}
-;   [& sigs]
-;     (let [name (if (symbol? (first sigs)) (first sigs) nil)
-;           sigs (if name (next sigs) sigs)
-;           sigs (if (vector? (first sigs))
-;                  (list sigs)
-;                  (if (seq? (first sigs))
-;                    sigs
-;                    ;; Assume single arity syntax
-;                    (throw (IllegalArgumentException.
-;                             (if (seq sigs)
-;                               (str "Parameter declaration "
-;                                    (first sigs)
-;                                    " should be a vector")
-;                               (str "Parameter declaration missing"))))))
-;           psig (fn* [sig]
-;                  ;; Ensure correct type before destructuring sig
-;                  (when (not (seq? sig))
-;                    (throw (IllegalArgumentException.
-;                             (str "Invalid signature " sig
-;                                  " should be a list"))))
-;                  (let [[params & body] sig
-;                        _ (when (not (vector? params))
-;                            (throw (IllegalArgumentException.
-;                                     (if (seq? (first sigs))
-;                                       (str "Parameter declaration " params
-;                                            " should be a vector")
-;                                       (str "Invalid signature " sig
-;                                            " should be a list")))))
-;                        conds (when (and (next body) (map? (first body)))
-;                                            (first body))
-;                        body (if conds (next body) body)
-;                        conds (or conds (meta params))
-;                        pre (:pre conds)
-;                        post (:post conds)
-;                        body (if post
-;                               `((let [~'% ~(if (< 1 (count body))
-;                                             `(do ~@body)
-;                                             (first body))]
-;                                  ~@(map (fn* [c] `(assert ~c)) post)
-;                                  ~'%))
-;                               body)
-;                        body (if pre
-;                               (concat (map (fn* [c] `(assert ~c)) pre)
-;                                       body)
-;                               body)]
-;                    (maybe-destructured params body)))
-;           new-sigs (map psig sigs)]
-;       (with-meta
-;         (if name
-;           (list* 'fn* name new-sigs)
-;           (cons 'fn* new-sigs))
-;         (meta &form))))
+  Defines a function"
+  {:added "1.0", :special-form true,
+   :forms '[(fn name? [params* ] exprs*) (fn name? ([params* ] exprs*)+)]}
+  [& sigs]
+    (let [name (if (symbol? (first sigs)) (first sigs) nil)
+          sigs (if name (next sigs) sigs)
+          sigs (if (vector? (first sigs))
+                 (list sigs)
+                 (if (seq? (first sigs))
+                   sigs
+                   ;; Assume single arity syntax
+                   (throw (ArgumentError.
+                            (if (seq sigs)
+                              (str "Parameter declaration "
+                                   (first sigs)
+                                   " should be a vector")
+                              (str "Parameter declaration missing"))))))
+          psig (fn* [sig]
+                 ;; Ensure correct type before destructuring sig
+                 (when (not (seq? sig))
+                   (throw (ArgumentError.
+                            (str "Invalid signature " sig
+                                 " should be a list"))))
+                 (let [[params & body] sig
+                       _ (when (not (vector? params))
+                           (throw (ArgumentError.
+                                    (if (seq? (first sigs))
+                                      (str "Parameter declaration " params
+                                           " should be a vector")
+                                      (str "Invalid signature " sig
+                                           " should be a list")))))
+                       conds (when (and (next body) (map? (first body)))
+                                           (first body))
+                       body (if conds (next body) body)
+                       conds (or conds (meta params))
+                       pre (:pre conds)
+                       post (:post conds)
+                       body (if post
+                              `((let [~'% ~(if (< 1 (count body))
+                                            `(do ~@body)
+                                            (first body))]
+                                 ~@(map (fn* [c] `(assert ~c)) post)
+                                 ~'%))
+                              body)
+                       body (if pre
+                              (concat (map (fn* [c] `(assert ~c)) pre)
+                                      body)
+                              body)]
+                   (maybe-destructured params body)))
+          new-sigs (map psig sigs)]
+      (with-meta
+        (if name
+          (list* 'fn* name new-sigs)
+          (cons 'fn* new-sigs))
+        (meta &form))))
 
-; (defmacro loop
-;   "Evaluates the exprs in a lexical context in which the symbols in
-;   the binding-forms are bound to their respective init-exprs or parts
-;   therein. Acts as a recur target."
-;   {:added "1.0", :special-form true, :forms '[(loop [bindings*] exprs*)]}
-;   [bindings & body]
-;     (assert-args
-;       (vector? bindings) "a vector for its binding"
-;       (even? (count bindings)) "an even number of forms in binding vector")
-;     (let [db (destructure bindings)]
-;       (if (= db bindings)
-;         `(loop* ~bindings ~@body)
-;         (let [vs (take-nth 2 (drop 1 bindings))
-;               bs (take-nth 2 bindings)
-;               gs (map (fn [b] (if (symbol? b) b (gensym))) bs)
-;               bfs (reduce1 (fn [ret [b v g]]
-;                             (if (symbol? b)
-;                               (conj ret g v)
-;                               (conj ret g v b g)))
-;                           [] (map vector bs vs gs))]
-;           `(let ~bfs
-;              (loop* ~(vec (interleave gs gs))
-;                (let ~(vec (interleave bs gs))
-;                  ~@body)))))))
+(defmacro loop
+  "Evaluates the exprs in a lexical context in which the symbols in
+  the binding-forms are bound to their respective init-exprs or parts
+  therein. Acts as a recur target."
+  {:added "1.0", :special-form true, :forms '[(loop [bindings*] exprs*)]}
+  [bindings & body]
+    (assert-args
+      (vector? bindings) "a vector for its binding"
+      (even? (count bindings)) "an even number of forms in binding vector")
+    (let [db (destructure bindings)]
+      (if (= db bindings)
+        `(loop* ~bindings ~@body)
+        (let [vs (take-nth 2 (drop 1 bindings))
+              bs (take-nth 2 bindings)
+              gs (map (fn [b] (if (symbol? b) b (gensym))) bs)
+              bfs (reduce1 (fn [ret [b v g]]
+                            (if (symbol? b)
+                              (conj ret g v)
+                              (conj ret g v b g)))
+                          [] (map vector bs vs gs))]
+          `(let ~bfs
+             (loop* ~(vec (interleave gs gs))
+               (let ~(vec (interleave bs gs))
+                 ~@body)))))))
 
-; (defmacro when-first
-;   "bindings => x xs
+(defmacro when-first
+  "bindings => x xs
 
-;   Roughly the same as (when (seq xs) (let [x (first xs)] body)) but xs is evaluated only once"
-;   {:added "1.0"}
-;   [bindings & body]
-;   (assert-args
-;      (vector? bindings) "a vector for its binding"
-;      (= 2 (count bindings)) "exactly 2 forms in binding vector")
-;   (let [[x xs] bindings]
-;     `(when-let [xs# (seq ~xs)]
-;        (let [~x (first xs#)]
-;            ~@body))))
+  Roughly the same as (when (seq xs) (let [x (first xs)] body)) but xs is evaluated only once"
+  {:added "1.0"}
+  [bindings & body]
+  (assert-args
+     (vector? bindings) "a vector for its binding"
+     (= 2 (count bindings)) "exactly 2 forms in binding vector")
+  (let [[x xs] bindings]
+    `(when-let [xs# (seq ~xs)]
+       (let [~x (first xs#)]
+           ~@body))))
 
-; (defmacro lazy-cat
-;   "Expands to code which yields a lazy sequence of the concatenation
-;   of the supplied colls.  Each coll expr is not evaluated until it is
-;   needed.
+(defmacro lazy-cat
+  "Expands to code which yields a lazy sequence of the concatenation
+  of the supplied colls.  Each coll expr is not evaluated until it is
+  needed.
 
-;   (lazy-cat xs ys zs) === (concat (lazy-seq xs) (lazy-seq ys) (lazy-seq zs))"
-;   {:added "1.0"}
-;   [& colls]
-;   `(concat ~@(map #(list `lazy-seq %) colls)))
+  (lazy-cat xs ys zs) === (concat (lazy-seq xs) (lazy-seq ys) (lazy-seq zs))"
+  {:added "1.0"}
+  [& colls]
+  `(concat ~@(map #(list `lazy-seq %) colls)))
 
 ; (defmacro for
 ;   "List comprehension. Takes a vector of one or more
@@ -4338,7 +4337,7 @@
 ;                                 (conj (pop groups) (conj (peek groups) [k v]))
 ;                                 (conj groups [k v])))
 ;                             [] (partition 2 seq-exprs)))
-;         err (fn [& msg] (throw (IllegalArgumentException. ^String (apply str msg))))
+;         err (fn [& msg] (throw (ArgumentError. (apply str msg))))
 ;         emit-bind (fn emit-bind [[[bind expr & mod-pairs]
 ;                                   & [[_ next-expr] :as next-groups]]]
 ;                     (let [giter (gensym "iter__")
@@ -4360,13 +4359,13 @@
 ;                                      :else `(cons ~body-expr
 ;                                                   (~giter (rest ~gxs)))))]
 ;                       (if next-groups
-;                         #_"not the inner-most loop"
+;                         ; not the inner-most loop
 ;                         `(fn ~giter [~gxs]
 ;                            (lazy-seq
 ;                              (loop [~gxs ~gxs]
 ;                                (when-first [~bind ~gxs]
 ;                                  ~(do-mod mod-pairs)))))
-;                         #_"inner-most loop"
+;                         ; inner-most loop
 ;                         (let [gi (gensym "i__")
 ;                               gb (gensym "b__")
 ;                               do-cmod (fn do-cmod [[[k v :as pair] & etc]]
@@ -4376,7 +4375,7 @@
 ;                                           (= k :when) `(if ~v
 ;                                                          ~(do-cmod etc)
 ;                                                          (recur
-;                                                            (unchecked-inc ~gi)))
+;                                                            (inc ~gi)))
 ;                                           (keyword? k)
 ;                                             (err "Invalid 'for' keyword " k)
 ;                                           :else
@@ -4776,14 +4775,14 @@
 ;      (take-while (mk-bound-fn sc start-test start-key)
 ;                  (if ((mk-bound-fn sc end-test end-key) e) s (next s))))))
 
-; (defn repeatedly
-;   "Takes a function of no args, presumably with side effects, and
-;   returns an infinite (or length n if supplied) lazy sequence of calls
-;   to it"
-;   {:added "1.0"
-;    :static true}
-;   ([f] (lazy-seq (cons (f) (repeatedly f))))
-;   ([n f] (take n (repeatedly f))))
+(defn repeatedly
+  "Takes a function of no args, presumably with side effects, and
+  returns an infinite (or length n if supplied) lazy sequence of calls
+  to it"
+  {:added "1.0"
+   :static true}
+  ([f] (lazy-seq (cons (f) (repeatedly f))))
+  ([n f] (take n (repeatedly f))))
 
 ; (defn add-classpath
 ;   "DEPRECATED
@@ -4839,11 +4838,11 @@
 ;   ^long
 ;   [coll] (clojure.lang.Murmur3/hashUnordered coll))
 
-; (defn interpose
-;   "Returns a lazy seq of the elements of coll separated by sep"
-;   {:added "1.0"
-;    :static true}
-;   [sep coll] (drop 1 (interleave (repeat sep) coll)))
+(defn interpose
+  "Returns a lazy seq of the elements of coll separated by sep"
+  {:added "1.0"
+   :static true}
+  [sep coll] (drop 1 (interleave (repeat sep) coll)))
 
 ; (defmacro definline
 ;   "Experimental - like defmacro, except defines a named function whose
@@ -5083,7 +5082,7 @@
 ;                   (instance? java.lang.Enum ev)
 ;                   (.visitEnum av name (descriptor (class ev)) (str ev))
 ;                   (class? ev) (.visit av name (clojure.asm.Type/getType ev))
-;                   :else (throw (IllegalArgumentException.
+;                   :else (throw (ArgumentError.
 ;                                 (str "Unsupported annotation value: " v " of class " (class ev))))))
 ;    (seq? v) (let [[nested nv] v
 ;                   c (resolve nested)
@@ -5952,7 +5951,7 @@
 ;   value of condp. A single default expression can follow the clauses,
 ;   and its value will be returned if no clause matches. If no default
 ;   expression is provided and no clause matches, an
-;   IllegalArgumentException is thrown."
+;   ArgumentError is thrown."
 ;   {:added "1.0"}
 
 ;   [pred expr & clauses]
@@ -5963,7 +5962,7 @@
 ;                        (split-at (if (= :>> (second args)) 3 2) args)
 ;                        n (count clause)]
 ;                  (cond
-;                   (= 0 n) `(throw (IllegalArgumentException. (str "No matching clause: " ~expr)))
+;                   (= 0 n) `(throw (ArgumentError. (str "No matching clause: " ~expr)))
 ;                   (= 1 n) a
 ;                   (= 2 n) `(if (~pred ~a ~expr)
 ;                              ~b
@@ -6285,7 +6284,7 @@
 ;   test-constant, the corresponding result-expr is returned. A single
 ;   default expression can follow the clauses, and its value will be
 ;   returned if no clause matches. If no default expression is provided
-;   and no clause matches, an IllegalArgumentException is thrown.
+;   and no clause matches, an ArgumentError is thrown.
 
 ;   Unlike cond and condp, case does a constant-time dispatch, the
 ;   clauses are not considered sequentially.  All manner of constant
@@ -6300,13 +6299,13 @@
 ;   (let [ge (with-meta (gensym) {:tag Object})
 ;         default (if (odd? (count clauses))
 ;                   (last clauses)
-;                   `(throw (IllegalArgumentException. (str "No matching clause: " ~ge))))]
+;                   `(throw (ArgumentError. (str "No matching clause: " ~ge))))]
 ;     (if (> 2 (count clauses))
 ;       `(let [~ge ~e] ~default)
 ;       (let [pairs (partition 2 clauses)
 ;             assoc-test (fn assoc-test [m test expr]
 ;                          (if (contains? m test)
-;                            (throw (IllegalArgumentException. (str "Duplicate case test constant: " test)))
+;                            (throw (ArgumentError. (str "Duplicate case test constant: " test)))
 ;                            (assoc m test expr)))
 ;             pairs (reduce1
 ;                        (fn [m [test expr]]
@@ -7007,12 +7006,12 @@
 ; (defn- ^{:dynamic true} assert-valid-fdecl
 ;   "A good fdecl looks like (([a] ...) ([a b] ...)) near the end of defn."
 ;   [fdecl]
-;   (when (empty? fdecl) (throw (IllegalArgumentException.
+;   (when (empty? fdecl) (throw (ArgumentError.
 ;                                 "Parameter declaration missing")))
 ;   (let [argdecls (map
 ;                    #(if (seq? %)
 ;                       (first %)
-;                       (throw (IllegalArgumentException.
+;                       (throw (ArgumentError.
 ;                         (if (seq? (first fdecl))
 ;                           (str "Invalid signature \""
 ;                                %
@@ -7023,7 +7022,7 @@
 ;                    fdecl)
 ;         bad-args (seq (remove #(vector? %) argdecls))]
 ;     (when bad-args
-;       (throw (IllegalArgumentException. (str "Parameter declaration \"" (first bad-args)
+;       (throw (ArgumentError. (str "Parameter declaration \"" (first bad-args)
 ;                                              "\" should be a vector"))))))
 
 ; (defn with-redefs-fn
