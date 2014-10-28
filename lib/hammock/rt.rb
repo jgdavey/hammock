@@ -97,10 +97,14 @@ module Hammock
         file = File.open(file)
       end
       Reader.new.read_all(file) do |form|
-        Compiler.compile(global_env, form).evaluate(global_env)
+        compile_and_eval(form)
       end
     ensure
       file.close
+    end
+
+    def self.compile_and_eval(form)
+      Compiler.compile(global_env, form).evaluate(global_env)
     end
 
     def self.specials
@@ -296,10 +300,12 @@ module Hammock
     end
 
     class Def
-      def call(_, env, sym, val=nil)
+      Undefined = Object.new
+
+      def call(_, env, sym, val=Undefined)
         ns = CURRENT_NS.deref
         var = ns.find_var(sym) || ns.intern(sym)
-        var.bind_root(val.evaluate(env))
+        var.bind_root(val.evaluate(env)) unless val == Undefined
         var.meta = sym.meta
         var
       end
@@ -364,7 +370,8 @@ module Hammock
           Function::Arity.new(bindings, *body)
         end
 
-        Function.create(name, CURRENT_NS.deref, env, arities).tap do |fn|
+        ns = env["__namespace__"] || CURRENT_NS.deref
+        Function.create(name, ns, env, arities).tap do |fn|
           fn.meta = list.meta if list.meta
         end
       end

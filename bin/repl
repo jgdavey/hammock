@@ -11,12 +11,11 @@ require 'stringio'
 Hammock::RT.bootstrap!
 
 reader = Hammock::Reader.new
-env = Hammock::RT.global_env
 
 while line = Readline.readline('> ', true)
   begin
     line = StringIO.new(line)
-    p reader.read(line).evaluate(env)
+    p Hammock::RT.compile_and_eval(reader.read(line))
   rescue Exception => ex
     puts "ERROR: #{ex}"
     puts ex.backtrace
