@@ -3826,50 +3826,50 @@
 ;           (recur ret (next es)))
 ;         ret)))
 
-; (defn find-ns
-;   "Returns the namespace named by the symbol or nil if it doesn't exist."
-;   {:added "1.0"
-;    :static true}
-;   [sym] (clojure.lang.Namespace/find sym))
+(defn find-ns
+  "Returns the namespace named by the symbol or nil if it doesn't exist."
+  {:added "1.0"
+   :static true}
+  [sym] (. Hammock.Namespace (find sym)))
 
-; (defn create-ns
-;   "Create a new namespace named by the symbol if one doesn't already
-;   exist, returns it or the already-existing namespace of the same
-;   name."
-;   {:added "1.0"
-;    :static true}
-;   [sym] (clojure.lang.Namespace/findOrCreate sym))
+(defn create-ns
+  "Create a new namespace named by the symbol if one doesn't already
+  exist, returns it or the already-existing namespace of the same
+  name."
+  {:added "1.0"
+   :static true}
+  [sym] (. Hammock.Namespace (find_or_create sym)))
 
-; (defn remove-ns
-;   "Removes the namespace named by the symbol. Use with caution.
-;   Cannot be used to remove the clojure namespace."
-;   {:added "1.0"
-;    :static true}
-;   [sym] (clojure.lang.Namespace/remove sym))
+(defn remove-ns
+  "Removes the namespace named by the symbol. Use with caution.
+  Cannot be used to remove the clojure namespace."
+  {:added "1.0"
+   :static true}
+  [sym] (.remove Hammock.Namespace sym))
 
-; (defn all-ns
-;   "Returns a sequence of all namespaces."
-;   {:added "1.0"
-;    :static true}
-;   [] (clojure.lang.Namespace/all))
+(defn all-ns
+  "Returns a sequence of all namespaces."
+  {:added "1.0"
+   :static true}
+  [] (.all Hammock.Namespace))
 
-; (defn the-ns
-;   "If passed a namespace, returns it. Else, when passed a symbol,
-;   returns the namespace named by it, throwing an exception if not
-;   found."
-;   {:added "1.0"
-;    :static true}
-;   ^clojure.lang.Namespace [x]
-;   (if (instance? clojure.lang.Namespace x)
-;     x
-;     (or (find-ns x) (throw (Exception. (str "No namespace: " x " found"))))))
+(defn the-ns
+  "If passed a namespace, returns it. Else, when passed a symbol,
+  returns the namespace named by it, throwing an exception if not
+  found."
+  {:added "1.0"
+   :static true}
+  [x]
+  (if (instance? Hammock.Namespace x)
+    x
+    (or (find-ns x) (throw (Hammock.Error. (str "No namespace: " x " found"))))))
 
-; (defn ns-name
-;   "Returns the name of the namespace, a symbol."
-;   {:added "1.0"
-;    :static true}
-;   [ns]
-;   (.getName (the-ns ns)))
+(defn ns-name
+  "Returns the name of the namespace, a symbol."
+  {:added "1.0"
+   :static true}
+  [ns]
+  (.name (the-ns ns)))
 
 ; (defn ns-map
 ;   "Returns a map of all the mappings for the namespace."

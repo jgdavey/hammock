@@ -1,8 +1,15 @@
+require 'atomic'
+require 'hammock/map'
+
 module Hammock
   NAMESPACES = {}
 
   class Namespace
     attr_reader :name
+
+    def self.all
+      Sequence.from_array NAMESPACES.values
+    end
 
     def self.find(name)
       NAMESPACES[name_only(name)]
@@ -42,17 +49,21 @@ module Hammock
 
     def initialize(name)
       @name = name
-      @symtable = {}
+      @mappings = Atomic.new(Map.new)
+    end
+
+    def mappings
+      @mappings.value
     end
 
     def find_var(name)
       name = self.class.name_only(name)
-      @symtable[name]
+      mappings[name]
     end
 
     def has_var?(name)
       name = self.class.name_only(name)
-      @symtable.key?(name)
+      mappings.key?(name)
     end
 
     def find_var!(name)
@@ -65,7 +76,9 @@ module Hammock
         raise ArgumentError, "Can't intern a ns-qualified symbol"
       end
       var = Var.new(name, symbol)
-      @symtable[sym.name] = var
+      @mappings.update do |mappings|
+        mappings.assoc(sym.name, var)
+      end
       var
     end
 
