@@ -140,10 +140,18 @@ module Hammock
           ret = send(m, io, char)
           next if ret == io
           break ret
-        else
-          token = read_token(io, char)
-          break interpret_token(io, token)
         end
+
+        if char == "+" || char == "-"
+          nextc = io.getc
+          io.ungetc(nextc)
+          if nextc.match(/\d/)
+            break read_number(io, char)
+          end
+        end
+
+        token = read_token(io, char)
+        break interpret_token(io, token)
 
         break if io.eof?
       end
@@ -340,11 +348,11 @@ module Hammock
 
     def match_number(digits)
       case digits
-      when /^[\d]+$/
+      when /^[-+]?[\d]+$/
         digits.to_i
-      when /^\d+\.\d+$/
+      when /^[-+]?\d+\.\d+$/
         digits.to_f
-      when /^\d+\/\d+$/
+      when /^[-+]?\d+\/\d+$/
         digits.to_r
       end
     end

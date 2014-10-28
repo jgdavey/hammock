@@ -27,6 +27,17 @@ describe Hammock::Reader do
     expect(result).to eq 3.24
   end
 
+  it "reads negative numbers" do
+    result = read_string "-3.24"
+    expect(result).to be_a Numeric
+    expect(result).to eq -3.24
+  end
+
+  it "reads symbols prefixed with -" do
+    result = read_string "-foo"
+    expect(result).to eq Hammock::Symbol.intern("-foo")
+  end
+
   it "reads strings" do
     result = read_string '"Hello"'
     expect(result).to eq "Hello"
