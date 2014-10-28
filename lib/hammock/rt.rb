@@ -14,6 +14,7 @@ require 'hammock/lazy_transformer'
 require 'hammock/var'
 require 'hammock/vector'
 require 'hammock/function'
+require 'hammock/multi_method'
 require 'hammock/volatile'
 require 'hammock/core_ext'
 
