@@ -71,6 +71,26 @@ module Hammock
       Map.from_pairs(ret)
     end
 
+    def interns
+      ret = []
+      mappings.each do |k,v|
+        if Var === v && v.ns == self
+          ret << [k,v]
+        end
+      end
+      Map.from_pairs(ret)
+    end
+
+    def refers
+      ret = []
+      mappings.each do |k,v|
+        if Var === v && v.ns != self
+          ret << [k,v]
+        end
+      end
+      Map.from_pairs(ret)
+    end
+
     def find_var(name)
       name = self.class.name_only(name)
       mappings[name]
@@ -105,6 +125,27 @@ module Hammock
       @mappings.update do |mappings|
         mappings.assoc(sym.name, var)
       end
+      var
+    end
+
+    def refer(symbol, var)
+      sym = Symbol.intern(symbol)
+      if sym.ns
+        raise ArgumentError, "Can't intern a ns-qualified symbol"
+      end
+
+      if obj = find_var(symbol)
+        if obj == var
+          return var
+        else
+          # warn on redefine
+        end
+      end
+
+      @mappings.update do |mappings|
+        mappings.assoc(sym.name, var)
+      end
+
       var
     end
 

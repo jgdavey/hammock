@@ -16,11 +16,12 @@ module Hammock
     end
 
     def self.alloc_from(other, meta)
-      new(other.ns, other.name, meta)
+      new(other.instance_variable_get("@ns"), other.name, meta)
     end
 
     def initialize(ns, name, meta=nil)
-      @name, @ns = name, ns
+      @name = name
+      @ns = ns if ns && !ns.to_s.empty?
       @name.freeze
       @ns.freeze
       @meta = meta
@@ -41,6 +42,7 @@ module Hammock
       elsif constant
         constant
       else
+        require 'pry'; binding.pry
         raise "Unable to resolve symbol #@name in this context"
       end
     end
@@ -68,7 +70,11 @@ module Hammock
     alias to_s inspect
 
     def context
-      ns || Hammock::RT::CURRENT_NS.deref
+      if @ns
+        ns
+      else
+        Hammock::RT::CURRENT_NS.deref
+      end
     end
   end
 end

@@ -1,5 +1,4 @@
 require 'atomic'
-require 'pry'
 require 'pathname'
 require 'hammock/reader'
 require 'hammock/namespace'
@@ -61,7 +60,8 @@ module Hammock
         "Symbol" => Hammock::Symbol,
         "Keyword" => ::Symbol,
         "Sequence" => Sequence,
-        "Meta" => Meta
+        "Meta" => Meta,
+        "List" => Hammock::List
       )
     end
 

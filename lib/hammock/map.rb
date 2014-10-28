@@ -135,11 +135,11 @@ module Hammock
     alias + merge
 
     def keys
-      reduce(Hammock::Set.new) { |keys, key, value| keys.add(key) }
+      reduce(Hammock::EmptyList.new) { |keys, key, _| keys.cons(key) }
     end
 
     def values
-      reduce(Hammock::EmptyList.new) { |values, key, value| values.cons(value) }
+      reduce(Hammock::EmptyList.new) { |values, _, value| values.cons(value) }
     end
 
     def seq

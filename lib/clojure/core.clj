@@ -2937,63 +2937,62 @@
 ;    :static true}
 ;   [form] (. clojure.lang.Compiler (eval form)))
 
-; (defmacro doseq
-;   "Repeatedly executes body (presumably for side-effects) with
-;   bindings and filtering as provided by \"for\".  Does not retain
-;   the head of the sequence. Returns nil."
-;   {:added "1.0"}
-;   [seq-exprs & body]
-;   (assert-args
-;      (vector? seq-exprs) "a vector for its binding"
-;      (even? (count seq-exprs)) "an even number of forms in binding vector")
-;   (let [step (fn step [recform exprs]
-;                (if-not exprs
-;                  [true `(do ~@body)]
-;                  (let [k (first exprs)
-;                        v (second exprs)]
-;                    (if (keyword? k)
-;                      (let [steppair (step recform (nnext exprs))
-;                            needrec (steppair 0)
-;                            subform (steppair 1)]
-;                        (cond
-;                          (= k :let) [needrec `(let ~v ~subform)]
-;                          (= k :while) [false `(when ~v
-;                                                 ~subform
-;                                                 ~@(when needrec [recform]))]
-;                          (= k :when) [false `(if ~v
-;                                                (do
-;                                                  ~subform
-;                                                  ~@(when needrec [recform]))
-;                                                ~recform)]))
-;                      (let [seq- (gensym "seq_")
-;                            chunk- (with-meta (gensym "chunk_")
-;                                              {:tag 'clojure.lang.IChunk})
-;                            count- (gensym "count_")
-;                            i- (gensym "i_")
-;                            recform `(recur (next ~seq-) nil 0 0)
-;                            steppair (step recform (nnext exprs))
-;                            needrec (steppair 0)
-;                            subform (steppair 1)
-;                            recform-chunk
-;                              `(recur ~seq- ~chunk- ~count- (unchecked-inc ~i-))
-;                            steppair-chunk (step recform-chunk (nnext exprs))
-;                            subform-chunk (steppair-chunk 1)]
-;                        [true
-;                         `(loop [~seq- (seq ~v), ~chunk- nil,
-;                                 ~count- 0, ~i- 0]
-;                            (if (< ~i- ~count-)
-;                              (let [~k (.nth ~chunk- ~i-)]
-;                                ~subform-chunk
-;                                ~@(when needrec [recform-chunk]))
-;                              (when-let [~seq- (seq ~seq-)]
-;                                (if (chunked-seq? ~seq-)
-;                                  (let [c# (chunk-first ~seq-)]
-;                                    (recur (chunk-rest ~seq-) c#
-;                                           (int (count c#)) (int 0)))
-;                                  (let [~k (first ~seq-)]
-;                                    ~subform
-;                                    ~@(when needrec [recform]))))))])))))]
-;     (nth (step nil (seq seq-exprs)) 1)))
+(defmacro doseq
+  "Repeatedly executes body (presumably for side-effects) with
+  bindings and filtering as provided by \"for\".  Does not retain
+  the head of the sequence. Returns nil."
+  {:added "1.0"}
+  [seq-exprs & body]
+  (assert-args
+     (vector? seq-exprs) "a vector for its binding"
+     (even? (count seq-exprs)) "an even number of forms in binding vector")
+  (let [step (fn step [recform exprs]
+               (if-not exprs
+                 [true `(do ~@body)]
+                 (let [k (first exprs)
+                       v (second exprs)]
+                   (if (keyword? k)
+                     (let [steppair (step recform (nnext exprs))
+                           needrec (steppair 0)
+                           subform (steppair 1)]
+                       (cond
+                         (= k :let) [needrec `(let ~v ~subform)]
+                         (= k :while) [false `(when ~v
+                                                ~subform
+                                                ~@(when needrec [recform]))]
+                         (= k :when) [false `(if ~v
+                                               (do
+                                                 ~subform
+                                                 ~@(when needrec [recform]))
+                                               ~recform)]))
+                     (let [seq- (gensym "seq_")
+                           chunk- (gensym "chunk_")
+                           count- (gensym "count_")
+                           i- (gensym "i_")
+                           recform `(recur (next ~seq-) nil 0 0)
+                           steppair (step recform (nnext exprs))
+                           needrec (steppair 0)
+                           subform (steppair 1)
+                           recform-chunk
+                             `(recur ~seq- ~chunk- ~count- (inc ~i-))
+                           steppair-chunk (step recform-chunk (nnext exprs))
+                           subform-chunk (steppair-chunk 1)]
+                       [true
+                        `(loop [~seq- (seq ~v), ~chunk- nil,
+                                ~count- 0, ~i- 0]
+                           (if (< ~i- ~count-)
+                             (let [~k (.nth ~chunk- ~i-)]
+                               ~subform-chunk
+                               ~@(when needrec [recform-chunk]))
+                             (when-let [~seq- (seq ~seq-)]
+                               (if (chunked-seq? ~seq-)
+                                 (let [c# (chunk-first ~seq-)]
+                                   (recur (chunk-rest ~seq-) c#
+                                          (int (count c#)) (int 0)))
+                                 (let [~k (first ~seq-)]
+                                   ~subform
+                                   ~@(when needrec [recform]))))))])))))]
+    (nth (step nil (seq seq-exprs)) 1)))
 
 ; (defn await
 ;   "Blocks the current thread (indefinitely!) until all actions
@@ -3810,11 +3809,11 @@
 ;                 (clojure.lang.LineNumberingPushbackReader.))]
 ;     (load-reader rdr)))
 
-; (defn set
-;   "Returns a set of the distinct elements of coll."
-;   {:added "1.0"
-;    :static true}
-;   [coll] (clojure.lang.PersistentHashSet/create (seq coll)))
+(defn set
+  "Returns a set of the distinct elements of coll."
+  {:added "1.0"
+   :static true}
+  [coll] (.create Set (seq coll)))
 
 (defn ^{:private true
         :static true}
@@ -3885,9 +3884,9 @@
   [ns sym]
   (.unmap (the-ns ns) sym))
 
-; ;(defn export [syms]
-; ;  (doseq [sym syms]
-; ;   (.. *ns* (intern sym) (setExported true))))
+;(defn export [syms]
+;  (doseq [sym syms]
+;   (.. *ns* (intern sym) (setExported true))))
 
 (defn ns-publics
   "Returns a map of the public intern mappings for the namespace."
@@ -3904,62 +3903,58 @@
 ;   [ns]
 ;   (filter-key val (partial instance? Class) (ns-map ns)))
 
-; (defn ns-interns
-;   "Returns a map of the intern mappings for the namespace."
-;   {:added "1.0"
-;    :static true}
-;   [ns]
-;   (let [ns (the-ns ns)]
-;     (filter-key val (fn [^clojure.lang.Var v] (and (instance? clojure.lang.Var v)
-;                                  (= ns (.ns v))))
-;                 (ns-map ns))))
+(defn ns-interns
+  "Returns a map of the intern mappings for the namespace."
+  {:added "1.0"
+   :static true}
+  [ns]
+  (let [ns (the-ns ns)]
+    (.interns ns)))
 
-; (defn refer
-;   "refers to all public vars of ns, subject to filters.
-;   filters can include at most one each of:
+(defn refer
+  "refers to all public vars of ns, subject to filters.
+  filters can include at most one each of:
 
-;   :exclude list-of-symbols
-;   :only list-of-symbols
-;   :rename map-of-fromsymbol-tosymbol
+  :exclude list-of-symbols
+  :only list-of-symbols
+  :rename map-of-fromsymbol-tosymbol
 
-;   For each public interned var in the namespace named by the symbol,
-;   adds a mapping from the name of the var to the var to the current
-;   namespace.  Throws an exception if name is already mapped to
-;   something else in the current namespace. Filters can be used to
-;   select a subset, via inclusion or exclusion, or to provide a mapping
-;   to a symbol different from the var's name, in order to prevent
-;   clashes. Use :use in the ns macro in preference to calling this directly."
-;   {:added "1.0"}
-;   [ns-sym & filters]
-;     (let [ns (or (find-ns ns-sym) (throw (new Exception (str "No namespace: " ns-sym))))
-;           fs (apply hash-map filters)
-;           nspublics (ns-publics ns)
-;           rename (or (:rename fs) {})
-;           exclude (set (:exclude fs))
-;           to-do (if (= :all (:refer fs))
-;                   (keys nspublics)
-;                   (or (:refer fs) (:only fs) (keys nspublics)))]
-;       (when (and to-do (not (instance? clojure.lang.Sequential to-do)))
-;         (throw (new Exception ":only/:refer value must be a sequential collection of symbols")))
-;       (doseq [sym to-do]
-;         (when-not (exclude sym)
-;           (let [v (nspublics sym)]
-;             (when-not v
-;               (throw (new java.lang.IllegalAccessError
-;                           (if (get (ns-interns ns) sym)
-;                             (str sym " is not public")
-;                             (str sym " does not exist")))))
-;             (. *ns* (refer (or (rename sym) sym) v)))))))
+  For each public interned var in the namespace named by the symbol,
+  adds a mapping from the name of the var to the var to the current
+  namespace.  Throws an exception if name is already mapped to
+  something else in the current namespace. Filters can be used to
+  select a subset, via inclusion or exclusion, or to provide a mapping
+  to a symbol different from the var's name, in order to prevent
+  clashes. Use :use in the ns macro in preference to calling this directly."
+  {:added "1.0"}
+  [ns-sym & filters]
+  (let [ns (or (find-ns ns-sym) (throw (ArgumentError. (str "No namespace: " ns-sym))))
+        fs (apply hash-map filters)
+        nspublics (ns-publics ns)
+        rename (or (:rename fs) {})
+        exclude (set (:exclude fs))
+        to-do (if (= :all (:refer fs))
+                (keys nspublics)
+                (or (:refer fs) (:only fs) (keys nspublics)))]
+    (when (and to-do (not (or (instance? Vector to-do) (instance? List to-do))))
+      (throw (ArgumentError. (str  ":only/:refer value must be a sequential collection of symbols" to-do (class to-do)))))
+    (doseq [sym to-do]
+      (when-not (exclude sym)
+        (let [v (nspublics sym)]
+          (when-not v
+            (throw (ArgumentError.
+                     (if (get (ns-interns ns) sym)
+                       (str sym " is not public")
+                       (str sym " does not exist")))))
+          (.refer *ns* (get rename sym sym) v))))))
 
-; (defn ns-refers
-;   "Returns a map of the refer mappings for the namespace."
-;   {:added "1.0"
-;    :static true}
-;   [ns]
-;   (let [ns (the-ns ns)]
-;     (filter-key val (fn [^clojure.lang.Var v] (and (instance? clojure.lang.Var v)
-;                                  (not= ns (.ns v))))
-;                 (ns-map ns))))
+(defn ns-refers
+  "Returns a map of the refer mappings for the namespace."
+  {:added "1.0"
+   :static true}
+  [ns]
+  (let [ns (the-ns ns)]
+    (.refers ns)))
 
 ; (defn alias
 ;   "Add an alias in the current namespace to another
