@@ -1791,14 +1791,14 @@
 ;          (apply f x y z args)))))
 
 ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Refs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; (defn ^{:private true}
-;   setup-reference [^clojure.lang.ARef r options]
-;   (let [opts (apply hash-map options)]
-;     (when (:meta opts)
-;       (.resetMeta r (:meta opts)))
-;     (when (:validator opts)
-;       (.setValidator r (:validator opts)))
-;     r))
+(defn ^{:private true}
+  setup-reference [r options]
+  (let [opts (apply hash-map options)]
+    (when (:meta opts)
+      (.reset_meta r (:meta opts)))
+    (when (:validator opts)
+      (.validator= r (:validator opts)))
+    r))
 
 ; (defn agent
 ;   "Creates and returns an agent with an initial value of state and
@@ -1890,30 +1890,30 @@
 ;    :static true}
 ;   [] (clojure.lang.Agent/releasePendingSends))
 
-; (defn add-watch
-;   "Adds a watch function to an agent/atom/var/ref reference. The watch
-;   fn must be a fn of 4 args: a key, the reference, its old-state, its
-;   new-state. Whenever the reference's state might have been changed,
-;   any registered watches will have their functions called. The watch fn
-;   will be called synchronously, on the agent's thread if an agent,
-;   before any pending sends if agent or ref. Note that an atom's or
-;   ref's state may have changed again prior to the fn call, so use
-;   old/new-state rather than derefing the reference. Note also that watch
-;   fns may be called from multiple threads simultaneously. Var watchers
-;   are triggered only by root binding changes, not thread-local
-;   set!s. Keys must be unique per reference, and can be used to remove
-;   the watch with remove-watch, but are otherwise considered opaque by
-;   the watch mechanism."
-;   {:added "1.0"
-;    :static true}
-;   [^clojure.lang.IRef reference key fn] (.addWatch reference key fn))
+(defn add-watch
+  "Adds a watch function to an agent/atom/var/ref reference. The watch
+  fn must be a fn of 4 args: a key, the reference, its old-state, its
+  new-state. Whenever the reference's state might have been changed,
+  any registered watches will have their functions called. The watch fn
+  will be called synchronously, on the agent's thread if an agent,
+  before any pending sends if agent or ref. Note that an atom's or
+  ref's state may have changed again prior to the fn call, so use
+  old/new-state rather than derefing the reference. Note also that watch
+  fns may be called from multiple threads simultaneously. Var watchers
+  are triggered only by root binding changes, not thread-local
+  set!s. Keys must be unique per reference, and can be used to remove
+  the watch with remove-watch, but are otherwise considered opaque by
+  the watch mechanism."
+  {:added "1.0"
+   :static true}
+  [reference key fn] (.add_watch reference key fn))
 
-; (defn remove-watch
-;   "Removes a watch (set by add-watch) from a reference"
-;   {:added "1.0"
-;    :static true}
-;   [^clojure.lang.IRef reference key]
-;   (.removeWatch reference key))
+(defn remove-watch
+  "Removes a watch (set by add-watch) from a reference"
+  {:added "1.0"
+   :static true}
+  [reference key]
+  (.remove_watch reference key))
 
 ; (defn agent-error
 ;   "Returns the exception thrown during an asynchronous action of the
@@ -2076,83 +2076,81 @@
 (defn deref
   ([ref] (.deref ref)))
 
-; (defn atom
-;   "Creates and returns an Atom with an initial value of x and zero or
-;   more options (in any order):
+(defn atom
+  "Creates and returns an Atom with an initial value of x and zero or
+  more options (in any order):
 
-;   :meta metadata-map
+  :meta metadata-map
 
-;   :validator validate-fn
+  :validator validate-fn
 
-;   If metadata-map is supplied, it will become the metadata on the
-;   atom. validate-fn must be nil or a side-effect-free fn of one
-;   argument, which will be passed the intended new state on any state
-;   change. If the new state is unacceptable, the validate-fn should
-;   return false or throw an exception."
-;   {:added "1.0"
-;    :static true}
-;   ([x] (new clojure.lang.Atom x))
-;   ([x & options] (setup-reference (atom x) options)))
+  If metadata-map is supplied, it will become the metadata on the
+  atom. validate-fn must be nil or a side-effect-free fn of one
+  argument, which will be passed the intended new state on any state
+  change. If the new state is unacceptable, the validate-fn should
+  return false or throw an exception."
+  {:added "1.0"
+   :static true}
+  ([x] (.new Hammock.Atom x))
+  ([x & options] (setup-reference (atom x) options)))
 
-; (defn swap!
-;   "Atomically swaps the value of atom to be:
-;   (apply f current-value-of-atom args). Note that f may be called
-;   multiple times, and thus should be free of side effects.  Returns
-;   the value that was swapped in."
-;   {:added "1.0"
-;    :static true}
-;   ([^clojure.lang.Atom atom f] (.swap atom f))
-;   ([^clojure.lang.Atom atom f x] (.swap atom f x))
-;   ([^clojure.lang.Atom atom f x y] (.swap atom f x y))
-;   ([^clojure.lang.Atom atom f x y & args] (.swap atom f x y args)))
+(defn swap!
+  "Atomically swaps the value of atom to be:
+  (apply f current-value-of-atom args). Note that f may be called
+  multiple times, and thus should be free of side effects.  Returns
+  the value that was swapped in."
+  {:added "1.0"
+   :static true}
+  ([atom f] (.swap atom f))
+  ([atom f & args] (.swap atom f args)))
 
-; (defn compare-and-set!
-;   "Atomically sets the value of atom to newval if and only if the
-;   current value of the atom is identical to oldval. Returns true if
-;   set happened, else false"
-;   {:added "1.0"
-;    :static true}
-;   [^clojure.lang.Atom atom oldval newval] (.compareAndSet atom oldval newval))
+(defn compare-and-set!
+  "Atomically sets the value of atom to newval if and only if the
+  current value of the atom is identical to oldval. Returns true if
+  set happened, else false"
+  {:added "1.0"
+   :static true}
+  [atom oldval newval] (.compare_and_set atom oldval newval))
 
-; (defn reset!
-;   "Sets the value of atom to newval without regard for the
-;   current value. Returns newval."
-;   {:added "1.0"
-;    :static true}
-;   [^clojure.lang.Atom atom newval] (.reset atom newval))
+(defn reset!
+  "Sets the value of atom to newval without regard for the
+  current value. Returns newval."
+  {:added "1.0"
+   :static true}
+  [atom newval] (.reset atom newval))
 
-; (defn set-validator!
-;   "Sets the validator-fn for a var/ref/agent/atom. validator-fn must be nil or a
-;   side-effect-free fn of one argument, which will be passed the intended
-;   new state on any state change. If the new state is unacceptable, the
-;   validator-fn should return false or throw an exception. If the current state (root
-;   value if var) is not acceptable to the new validator, an exception
-;   will be thrown and the validator will not be changed."
-;   {:added "1.0"
-;    :static true}
-;   [^clojure.lang.IRef iref validator-fn] (. iref (setValidator validator-fn)))
+(defn set-validator!
+  "Sets the validator-fn for a var/ref/agent/atom. validator-fn must be nil or a
+  side-effect-free fn of one argument, which will be passed the intended
+  new state on any state change. If the new state is unacceptable, the
+  validator-fn should return false or throw an exception. If the current state (root
+  value if var) is not acceptable to the new validator, an exception
+  will be thrown and the validator will not be changed."
+  {:added "1.0"
+   :static true}
+  [iref validator-fn] (. iref (setValidator validator-fn)))
 
-; (defn get-validator
-;   "Gets the validator-fn for a var/ref/agent/atom."
-;   {:added "1.0"
-;    :static true}
-;  [^clojure.lang.IRef iref] (. iref (getValidator)))
+(defn get-validator
+  "Gets the validator-fn for a var/ref/agent/atom."
+  {:added "1.0"
+   :static true}
+ [iref] (. iref (validator)))
 
-; (defn alter-meta!
-;   "Atomically sets the metadata for a namespace/var/ref/agent/atom to be:
+(defn alter-meta!
+  "Atomically sets the metadata for a namespace/var/ref/agent/atom to be:
 
-;   (apply f its-current-meta args)
+  (apply f its-current-meta args)
 
-;   f must be free of side-effects"
-;   {:added "1.0"
-;    :static true}
-;  [^clojure.lang.IReference iref f & args] (.alterMeta iref f args))
+  f must be free of side-effects"
+  {:added "1.0"
+   :static true}
+ [iref f & args] (.alter_meta iref f args))
 
-; (defn reset-meta!
-;   "Atomically resets the metadata for a namespace/var/ref/agent/atom"
-;   {:added "1.0"
-;    :static true}
-;  [^clojure.lang.IReference iref metadata-map] (.resetMeta iref metadata-map))
+(defn reset-meta!
+  "Atomically resets the metadata for a namespace/var/ref/agent/atom"
+  {:added "1.0"
+   :static true}
+ [iref metadata-map] (.reset_meta iref metadata-map))
 
 ; (defn commute
 ;   "Must be called in a transaction. Sets the in-transaction-value of

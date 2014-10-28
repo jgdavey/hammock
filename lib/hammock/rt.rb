@@ -15,6 +15,7 @@ require 'hammock/var'
 require 'hammock/vector'
 require 'hammock/function'
 require 'hammock/multi_method'
+require 'hammock/atom'
 require 'hammock/volatile'
 require 'hammock/core_ext'
 
