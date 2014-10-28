@@ -231,6 +231,14 @@ module Hammock
       Hammock::Reduced === obj
     end
 
+    def self.keys(sequence)
+      sequence.keys if sequence
+    end
+
+    def self.vals(sequence)
+      sequence.vals if sequence
+    end
+
     def self.count(sequence)
       if sequence
         sequence.count

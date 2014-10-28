@@ -1358,17 +1358,17 @@
 ;            (next keys)))
 ;         (with-meta ret (meta map)))))
 
-; (defn keys
-;   "Returns a sequence of the map's keys, in the same order as (seq map)."
-;   {:added "1.0"
-;    :static true}
-;   [map] (. clojure.lang.RT (keys map)))
+(defn keys
+  "Returns a sequence of the map's keys, in the same order as (seq map)."
+  {:added "1.0"
+   :static true}
+  [map] (. RT (keys map)))
 
-; (defn vals
-;   "Returns a sequence of the map's values, in the same order as (seq map)."
-;   {:added "1.0"
-;    :static true}
-;   [map] (. clojure.lang.RT (vals map)))
+(defn vals
+  "Returns a sequence of the map's values, in the same order as (seq map)."
+  {:added "1.0"
+   :static true}
+  [map] (. RT (vals map)))
 
 (defn key
   "Returns the key of the map entry."
