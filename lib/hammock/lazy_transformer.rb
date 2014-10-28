@@ -127,7 +127,7 @@ module Hammock
         end
 
         def apply_result(result)
-          lt = RT.reduced?(result) ? result.deref : result
+          lt = result
           lt.stepper = nil
           result
         end
@@ -148,10 +148,14 @@ module Hammock
       def step(lt)
         while !lt.stepper.nil? && next?
           if RT.reduced?(@xform.call(lt, @iter.next))
-            unless lt.rest.nil?
-              lt.rest.stepper = nil
+            lt.stepper = nil
+            et = lt
+            until et.rest.nil?
+              et = et.rest
+              et.stepper = nil
             end
-            break
+            @xform.call(et)
+            return
           end
         end
         unless lt.stepper.nil?

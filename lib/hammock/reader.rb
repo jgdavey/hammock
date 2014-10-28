@@ -18,7 +18,7 @@ module Hammock
         @column_number = 0
         @line_number = 1
         @filename = if File === io
-                      File.absolute_path(io)
+                      io.path
                     else
                       "(input)"
                     end
