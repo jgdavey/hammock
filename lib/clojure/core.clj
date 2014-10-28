@@ -3306,27 +3306,25 @@
 ;       m
 ;       (+ m div))))
 
-; (defn ratio?
-;   "Returns true if n is a Ratio"
-;   {:added "1.0"
-;    :static true}
-;   [n] (instance? clojure.lang.Ratio n))
+(defn ratio?
+  "Returns true if n is a Ratio"
+  {:added "1.0"
+   :static true}
+  [n] (instance? Rational n))
 
-; (defn numerator
-;   "Returns the numerator part of a Ratio."
-;   {:tag BigInteger
-;    :added "1.2"
-;    :static true}
-;   [r]
-;   (.numerator ^clojure.lang.Ratio r))
+(defn numerator
+  "Returns the numerator part of a Ratio."
+  {:added "1.2"
+   :static true}
+  [r]
+  (.numerator r))
 
-; (defn denominator
-;   "Returns the denominator part of a Ratio."
-;   {:tag BigInteger
-;    :added "1.2"
-;    :static true}
-;   [r]
-;   (.denominator ^clojure.lang.Ratio r))
+(defn denominator
+  "Returns the denominator part of a Ratio."
+  {:added "1.2"
+   :static true}
+  [r]
+  (.denominator r))
 
 ; (defn decimal?
 ;   "Returns true if n is a BigDecimal"
@@ -3334,20 +3332,19 @@
 ;    :static true}
 ;   [n] (instance? BigDecimal n))
 
-; (defn float?
-;   "Returns true if n is a floating point number"
-;   {:added "1.0"
-;    :static true}
-;   [n]
-;   (or (instance? Double n)
-;       (instance? Float n)))
+(defn float?
+  "Returns true if n is a floating point number"
+  {:added "1.0"
+   :static true}
+  [n]
+  (instance? Float n))
 
-; (defn rational?
-;   "Returns true if n is a rational number"
-;   {:added "1.0"
-;    :static true}
-;   [n]
-;   (or (integer? n) (ratio? n) (decimal? n)))
+(defn rational?
+  "Returns true if n is a rational number"
+  {:added "1.0"
+   :static true}
+  [n]
+  (or (integer? n) (ratio? n)))
 
 ; (defn bigint
 ;   "Coerce to BigInt"
