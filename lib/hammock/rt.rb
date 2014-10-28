@@ -205,10 +205,8 @@ module Hammock
       case sequence
       when NilClass
         nil
-      when Hammock::List, LazyTransformer, LazySequence, Map
+      when Hammock::List, LazyTransformer, LazySequence, Map, Hammock::Set, Vector
         sequence.seq
-      when Vector, Set
-        Sequence.from_array sequence.to_a
       else
         if sequence.respond_to?(:to_a)
           list = Sequence.from_array sequence.to_a
@@ -234,7 +232,11 @@ module Hammock
     end
 
     def self.count(sequence)
-      sequence.count
+      if sequence
+        sequence.count
+      else
+        0
+      end
     end
 
     def self.nth(sequence, *args)

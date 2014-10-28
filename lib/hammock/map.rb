@@ -143,6 +143,7 @@ module Hammock
     end
 
     def seq
+      return if count == 0
       @trie.reduce(Hammock::EmptyList.new) { |entries, entry| entries.cons(entry)}
     end
 

@@ -112,6 +112,7 @@ module Hammock
     end
 
     def seq
+      return if count == 0
       Sequence.from_array(to_a)
     end
 

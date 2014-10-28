@@ -163,6 +163,7 @@ module Hammock
     alias assoc assoc_n
 
     def seq
+      return if count == 0
       Sequence.from_array(to_a)
     end
 
