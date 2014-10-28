@@ -42,6 +42,14 @@ module Hammock
       @dynamic
     end
 
+    def public?
+      @public
+    end
+
+    def private?
+      !@public
+    end
+
     def deref
       @root
     end
@@ -56,6 +64,9 @@ module Hammock
     end
 
     def meta=(meta)
+      if meta[:private]
+        @public = false
+      end
       @meta = meta
     end
 
@@ -69,7 +80,7 @@ module Hammock
 
     def to_s
       if @ns
-        "#'#@ns/#{symbol.name}"
+        "#'#{@ns.name}/#{symbol.name}"
       else
         n = symbol ? symbol.to_s : "--unnamed--"
         "#<Var: #{n}>"

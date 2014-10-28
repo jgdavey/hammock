@@ -1,4 +1,5 @@
 require 'atomic'
+require 'hammock/errors'
 require 'hammock/map'
 
 module Hammock
@@ -52,13 +53,38 @@ module Hammock
       @mappings = Atomic.new(Map.new)
     end
 
+    def ==(other)
+      self.object_id == other.object_id
+    end
+
     def mappings
       @mappings.value
+    end
+
+    def publics
+      ret = []
+      mappings.each do |k,v|
+        if Var === v && v.ns == self && v.public?
+          ret << [k,v]
+        end
+      end
+      Map.from_pairs(ret)
     end
 
     def find_var(name)
       name = self.class.name_only(name)
       mappings[name]
+    end
+
+    def unmap(symbol)
+      sym = Symbol.intern(symbol)
+      if sym.ns
+        raise Error, "Can't unmap a ns-qualified symbol"
+      end
+      @mappings.update do |map|
+        map.dissoc(sym.name)
+      end
+      nil
     end
 
     def has_var?(name)
@@ -75,7 +101,7 @@ module Hammock
       if sym.ns
         raise ArgumentError, "Can't intern a ns-qualified symbol"
       end
-      var = Var.new(name, symbol)
+      var = Var.new(self, symbol)
       @mappings.update do |mappings|
         mappings.assoc(sym.name, var)
       end

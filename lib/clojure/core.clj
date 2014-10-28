@@ -3593,7 +3593,7 @@
 ;     `(fn [~t ~@args]
 ;        (. ~t (~name ~@args)))))
 
-(defn -now {:private true} []
+(defn ^:private -now []
   (.to_f (.now Time)))
 
 (defmacro time
@@ -3816,15 +3816,15 @@
 ;    :static true}
 ;   [coll] (clojure.lang.PersistentHashSet/create (seq coll)))
 
-; (defn ^{:private true
-;    :static true}
-;   filter-key [keyfn pred amap]
-;     (loop [ret {} es (seq amap)]
-;       (if es
-;         (if (pred (keyfn (first es)))
-;           (recur (assoc ret (key (first es)) (val (first es))) (next es))
-;           (recur ret (next es)))
-;         ret)))
+(defn ^{:private true
+        :static true}
+  filter-key [keyfn pred amap]
+    (loop [ret {} es (seq amap)]
+      (if es
+        (if (pred (keyfn (first es)))
+          (recur (assoc ret (key (first es)) (val (first es))) (next es))
+          (recur ret (next es)))
+        ret)))
 
 (defn find-ns
   "Returns the namespace named by the symbol or nil if it doesn't exist."
@@ -3871,34 +3871,31 @@
   [ns]
   (.name (the-ns ns)))
 
-; (defn ns-map
-;   "Returns a map of all the mappings for the namespace."
-;   {:added "1.0"
-;    :static true}
-;   [ns]
-;   (.getMappings (the-ns ns)))
+(defn ns-map
+  "Returns a map of all the mappings for the namespace."
+  {:added "1.0"
+   :static true}
+  [ns]
+  (.mappings (the-ns ns)))
 
-; (defn ns-unmap
-;   "Removes the mappings for the symbol from the namespace."
-;   {:added "1.0"
-;    :static true}
-;   [ns sym]
-;   (.unmap (the-ns ns) sym))
+(defn ns-unmap
+  "Removes the mappings for the symbol from the namespace."
+  {:added "1.0"
+   :static true}
+  [ns sym]
+  (.unmap (the-ns ns) sym))
 
 ; ;(defn export [syms]
 ; ;  (doseq [sym syms]
 ; ;   (.. *ns* (intern sym) (setExported true))))
 
-; (defn ns-publics
-;   "Returns a map of the public intern mappings for the namespace."
-;   {:added "1.0"
-;    :static true}
-;   [ns]
-;   (let [ns (the-ns ns)]
-;     (filter-key val (fn [^clojure.lang.Var v] (and (instance? clojure.lang.Var v)
-;                                  (= ns (.ns v))
-;                                  (.isPublic v)))
-;                 (ns-map ns))))
+(defn ns-publics
+  "Returns a map of the public intern mappings for the namespace."
+  {:added "1.0"
+   :static true}
+  [ns]
+  (let [ns (the-ns ns)]
+    (.publics ns)))
 
 ; (defn ns-imports
 ;   "Returns a map of the import mappings for the namespace."
