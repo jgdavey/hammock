@@ -44,10 +44,19 @@ module Hammock
       @s.tail
     end
 
-    def more
+    def rest
       seq
       return EmptyList.new if @s.nil?
-      @s.more
+      @s.rest
+    end
+
+    def each
+      return self unless block_given?
+      list = self
+      while !list.empty?
+        yield(list.head)
+        list = list.rest
+      end
     end
 
     def inspect

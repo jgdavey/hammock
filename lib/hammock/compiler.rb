@@ -60,12 +60,12 @@ module Hammock
         dreffed = item.deref
         if macro?(item) || macro?(dreffed)
           begin
-            form = dreffed.call(form, env, *form.cdr)
+            form = dreffed.call(form, env, *form.tail)
             if meta && Meta === form
               form = form.with_meta(meta)
             end
           rescue => e
-            raise Hammock::CompileError.new(form, "Error compiling: #{e}")
+            raise Hammock::CompileError.new(form), "Error compiling: #{e}", e.backtrace
           end
           return form, true
         else
@@ -127,7 +127,7 @@ module Hammock
       end
 
       if s = special(list)
-        return s.call(list, env, *list.cdr)
+        return s.call(list, env, *list.tail)
       end
 
       head = list.car
@@ -144,14 +144,14 @@ module Hammock
 
       case fn
       when IFn
-        args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
+        args = (list.tail || []).to_a.map { |elem| elem.evaluate(env) }
         begin
           fn.call *args
         rescue => e
           raise e.class, e.message, (env["__stack__"].to_a.reverse)
         end
       when ::Symbol
-        args = (list.cdr || []).to_a.map { |elem| elem.evaluate(env) }
+        args = (list.tail || []).to_a.map { |elem| elem.evaluate(env) }
         if args.count > 2
           raise ArgumentError, "more than one arg passed as argument to Keyword #{fn}", env["__stack__"].to_a
         end

@@ -417,7 +417,7 @@ module Hammock
         ret = RT.list(QUOTE, sym)
       elsif form.respond_to?(:first)
         if form.first == UNQUOTE
-          ret = form.cdr.car
+          ret = form.tail.first
         elsif form.first == UNQUOTE_SPLICING
           raise "This is a problem"
         elsif Map === form
@@ -463,7 +463,7 @@ module Hammock
         else
           ret = ret.cons(RT.list(LIST, syntax_quote(item)))
         end
-        seq = seq.cdr
+        seq = seq.tail
       end
       RT.seq(ret)
     end

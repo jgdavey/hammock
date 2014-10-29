@@ -4,17 +4,21 @@ require 'hamster/enumerable'
 require 'hammock/set'
 require 'hammock/compiler'
 require 'hammock/ipersistent_collection'
+require 'hammock/iseq'
 
 module Hammock
   module List
     include IPersistentCollection
     include Hamster::Enumerable
+    include ISeq
+
     Undefined = Object.new
 
     CADR = /^c([ad]+)r$/
 
     def first; head end
     def null?; empty? end
+    def rest; tail end
 
     def size
       reduce(0) { |memo, item| memo.next }

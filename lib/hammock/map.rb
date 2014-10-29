@@ -6,6 +6,7 @@ require 'hammock/ipersistent_collection'
 require 'hammock/meta'
 require 'hammock/ifn'
 require 'hammock/ilookup'
+require 'hammock/iseq'
 
 module Hammock
   class Map
@@ -14,6 +15,7 @@ module Hammock
     include Meta
     include IFn
     include ILookup
+    include ISeq
 
     Undefined = Object.new
 

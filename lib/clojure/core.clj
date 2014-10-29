@@ -614,35 +614,31 @@
   [& body]
   (list '.new 'Hammock.LazySequence nil (list* '^{:once true} fn* [] body)))
 
-; (defn ^:static ^clojure.lang.ChunkBuffer chunk-buffer ^clojure.lang.ChunkBuffer [capacity]
-;   (clojure.lang.ChunkBuffer. capacity))
+(defn ^:static chunk-buffer [capacity]
+  (Hammock.ChunkBuffer. capacity))
 
-; (defn ^:static chunk-append [^clojure.lang.ChunkBuffer b x]
-;   (.add b x))
+(defn ^:static chunk-append [b x]
+  (.add b x))
 
-; (defn ^:static ^clojure.lang.IChunk chunk [^clojure.lang.ChunkBuffer b]
-;   (.chunk b))
+(defn ^:static chunk [b]
+  (.chunk b))
 
-; (defn ^:static  ^clojure.lang.IChunk chunk-first ^clojure.lang.IChunk [^clojure.lang.IChunkedSeq s]
-;   (.chunkedFirst s))
+(defn ^:static chunk-first [s]
+  (.chunked_first s))
 
-; (defn ^:static ^clojure.lang.ISeq chunk-rest ^clojure.lang.ISeq [^clojure.lang.IChunkedSeq s]
-;   (.chunkedMore s))
+(defn ^:static chunk-rest [s]
+  (.chunked_rest s))
 
-; (defn ^:static ^clojure.lang.ISeq chunk-next ^clojure.lang.ISeq [^clojure.lang.IChunkedSeq s]
-;   (.chunkedNext s))
+(defn ^:static chunk-next [s]
+  (.chunked_rest s))
 
-; (defn ^:static chunk-cons [chunk rest]
-;   (if (clojure.lang.Numbers/isZero (clojure.lang.RT/count chunk))
-;     rest
-;     (clojure.lang.ChunkedCons. chunk rest)))
+(defn ^:static chunk-cons [chunk rest]
+  (if (zero? (.count RT chunk))
+    rest
+    (Hammock.ChunkedCons. chunk rest)))
 
-; (defn ^:static chunked-seq? [s]
-;   (instance? clojure.lang.IChunkedSeq s))
-
-; TODO Chunked sequences
 (defn ^:static chunked-seq? [s]
-  false)
+  (instance? Hammock.IChunkedSeq s))
 
 (defn concat
   "Returns a lazy seq representing the concatenation of the elements in the supplied colls."
@@ -2718,32 +2714,6 @@
    :static true}
   [f x] (cons x (lazy-seq (iterate f (f x)))))
 
-; (defn range
-;   "Returns a lazy seq of nums from start (inclusive) to end
-;   (exclusive), by step, where start defaults to 0, step to 1, and end to
-;   infinity. When step is equal to 0, returns an infinite sequence of
-;   start. When start is equal to end, returns empty list."
-;   {:added "1.0"
-;    :static true}
-;   ([] (range 0 Float.INFINITY 1))
-;   ([end] (range 0 end 1))
-;   ([start end] (range start end 1))
-;   ([start end step]
-;    (lazy-seq
-;     (let [b (chunk-buffer 32)
-;           comp (cond (or (zero? step) (= start end)) not=
-;                      (pos? step) <
-;                      (neg? step) >)]
-;       (loop [i start]
-;         (if (and (< (count b) 32)
-;                  (comp i end))
-;           (do
-;             (chunk-append b i)
-;             (recur (+ i step)))
-;           (chunk-cons (chunk b)
-;                       (when (comp i end)
-;                         (range i end step)))))))))
-
 (defn range
   "Returns a lazy seq of nums from start (inclusive) to end
   (exclusive), by step, where start defaults to 0, step to 1, and end to
@@ -2751,17 +2721,24 @@
   start. When start is equal to end, returns empty list."
   {:added "1.0"
    :static true}
-  ([] (iterate inc 0))
+  ([] (range 0 Float.INFINITY 1))
   ([end] (range 0 end 1))
   ([start end] (range start end 1))
   ([start end step]
    (lazy-seq
-    (let [comp (cond (or (zero? step) (= start end)) not=
+    (let [b (chunk-buffer 32)
+          comp (cond (or (zero? step) (= start end)) not=
                      (pos? step) <
                      (neg? step) >)]
-      (when (comp start end)
-        (cons start (range (+ start step) end step)))))))
-
+      (loop [i start]
+        (if (and (< (count b) 32)
+                 (comp i end))
+          (do
+            (chunk-append b i)
+            (recur (+ i step)))
+          (chunk-cons (chunk b)
+                      (when (comp i end)
+                        (range i end step)))))))))
 
 (defn merge
   "Returns a map that consists of the rest of the maps conj-ed onto

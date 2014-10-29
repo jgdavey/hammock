@@ -16,6 +16,8 @@ require 'hammock/function'
 require 'hammock/multi_method'
 require 'hammock/atom'
 require 'hammock/volatile'
+require 'hammock/chunked_cons'
+require 'hammock/chunk_buffer'
 require 'hammock/core_ext'
 
 module Hammock
@@ -211,7 +213,11 @@ module Hammock
       case sequence
       when NilClass
         nil
-      when Hammock::List, LazyTransformer, LazySequence, Map, Hammock::Set, Vector
+      when LazyTransformer, LazySequence
+        sequence.seq
+      when List
+        sequence
+      when ISeq
         sequence.seq
       else
         if sequence.respond_to?(:to_a)

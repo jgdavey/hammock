@@ -4,6 +4,8 @@ require 'hammock/ipersistent_collection'
 require 'hammock/meta'
 require 'hammock/ifn'
 require 'hammock/ilookup'
+require 'hammock/chunked_seq'
+require 'hammock/iseq'
 
 module Hammock
   class Vector
@@ -12,6 +14,7 @@ module Hammock
     include Meta
     include IFn
     include ILookup
+    include ISeq
 
     Undefined = Object.new
 
@@ -164,11 +167,16 @@ module Hammock
 
     def seq
       return if count == 0
-      Sequence.from_array(to_a)
+      # Sequence.from_array(to_a)
+      ChunkedSeq.new(self, 0, 0)
     end
 
     def evaluate(env)
       map { |e| e.evaluate(env) }
+    end
+
+    def array_for(i)
+      leaf_node_for(@root, root_index_bits, i)
     end
 
     def inspect
@@ -299,6 +307,7 @@ module Hammock
         "[#{to_a.map(&:inspect).join(' ')}]"
       end
     end
+
   end
 
   EmptyVector = Vector.new
