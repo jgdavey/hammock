@@ -51,10 +51,15 @@ module Hammock
     def initialize(name)
       @name = name
       @mappings = Atomic.new(Map.new)
+      @aliases = Atomic.new(Map.new)
     end
 
     def ==(other)
       self.object_id == other.object_id
+    end
+
+    def aliases
+      @aliases.value
     end
 
     def mappings
@@ -89,6 +94,25 @@ module Hammock
         end
       end
       Map.from_pairs(ret)
+    end
+
+    def add_alias(sym, ns)
+      sym = self.class.name_only(sym)
+      @aliases.update do |map|
+        map.assoc(sym, ns)
+      end
+    end
+
+    def remove_alias(sym)
+      sym = self.class.name_only(sym)
+      @aliases.update do |map|
+        map.dissoc(sym)
+      end
+    end
+
+    def lookup_alias(name)
+      name = self.class.name_only(name)
+      aliases[name]
     end
 
     def find_var(name)

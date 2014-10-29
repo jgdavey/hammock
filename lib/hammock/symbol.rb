@@ -35,14 +35,13 @@ module Hammock
     alias eql? ==
 
     def evaluate(env)
-      return env[name] if env.key?(name)
-      namespace = env["__namespace__"] || context
+      return env[name] if env.key?(name) && !@ns
+      namespace = context(env["__namespace__"])
       if namespace.has_var?(name) && (v = namespace.find_var(name))
         v.deref
       elsif constant
         constant
       else
-        require 'pry'; binding.pry
         raise "Unable to resolve symbol #@name in this context"
       end
     end
@@ -69,11 +68,13 @@ module Hammock
     end
     alias to_s inspect
 
-    def context
+    def context(contextual)
+      inns = Hammock::RT::CURRENT_NS.deref
+      prefer_ns = contextual || inns
       if @ns
-        ns
+        prefer_ns.lookup_alias(@ns) || Namespace.find(@ns)
       else
-        Hammock::RT::CURRENT_NS.deref
+        prefer_ns
       end
     end
   end
