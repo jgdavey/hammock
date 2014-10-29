@@ -3915,15 +3915,16 @@
                 (or (:refer fs) (:only fs) (keys nspublics)))]
     (when (and to-do (not (or (instance? Vector to-do) (instance? List to-do))))
       (throw (ArgumentError. (str  ":only/:refer value must be a sequential collection of symbols" to-do (class to-do)))))
-    (doseq [sym to-do]
-      (when-not (exclude sym)
-        (let [v (nspublics sym)]
-          (when-not v
-            (throw (ArgumentError.
-                     (if (get (ns-interns ns) sym)
-                       (str sym " is not public")
-                       (str sym " does not exist")))))
-          (.refer *ns* (get rename sym sym) v))))))
+    (doall (map (fn [sym]
+                  (when-not (exclude sym)
+                    (let [v (nspublics sym)]
+                      (when-not v
+                        (throw (ArgumentError.
+                                 (if (get (ns-interns ns) sym)
+                                   (str sym " is not public")
+                                   (str sym " does not exist")))))
+                      (.refer *ns* (get rename sym sym) v)))) to-do))
+    nil))
 
 (defn ns-refers
   "Returns a map of the refer mappings for the namespace."
