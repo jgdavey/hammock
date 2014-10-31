@@ -287,16 +287,6 @@
                       (butlast fdecl)
                       fdecl)
               m (conj {:arglists (list 'quote (sigs fdecl))} m)
-              m (let [inline (:inline m)
-                      ifn (first inline)
-                      iname (second inline)]
-                  ;; same as: (if (and (= 'fn ifn) (not (symbol? iname))) ...)
-                  (if (if (.equal RT 'fn ifn)
-                        (if (instance? Symbol iname) false true))
-                    ;; inserts the same fn name to the inline fn if it does not have one
-                    (assoc m :inline (cons ifn (cons (.intern Symbol (.+ (.name name) "__inliner"))
-                                                     (next inline))))
-                    m))
               m (conj (if (meta name) (meta name) {}) m)]
           (list 'def (with-meta name m)
                 (cons `fn (cons name fdecl))))))
@@ -454,8 +444,7 @@
 
 (defn false?
   "Returns true if x is the value false, false otherwise."
-  {:tag Boolean,
-   :added "1.0"
+  {:added "1.0"
    :static true}
   [x] (.false? x))
 
@@ -539,8 +528,7 @@
 (defn keyword
   "Returns a Keyword with the given namespace and name.  Do not use :
   in the keyword strings, it will be added automatically."
-  {:tag clojure.lang.Keyword
-   :added "1.0"
+  {:added "1.0"
    :static true}
   ([name] (.make_keyword RT name))
   ([ns name] (.make_keyword RT ns name)))
@@ -718,8 +706,7 @@
 
 (defn not=
   "Same as (not (= obj1 obj2))"
-  {:tag Boolean
-   :added "1.0"
+  {:added "1.0"
    :static true}
   ([x] false)
   ([x y] (not (= x y)))
@@ -1293,9 +1280,7 @@
 
 (defn get
   "Returns the value mapped to key, not-found or nil if key not present."
-  {:inline (fn  [m k & nf] `(. clojure.lang.RT (get ~m ~k ~@nf)))
-   :inline-arities #{2 3}
-   :added "1.0"}
+  {:added "1.0"}
   ([map key]
    (. RT (get map key)))
   ([map key not-found]
@@ -1398,8 +1383,7 @@
 
 (defn namespace
   "Returns the namespace String of a symbol or keyword, or nil if not present."
-  {:tag String
-   :added "1.0"
+  {:added "1.0"
    :static true}
   [x]
   (. x (ns)))
