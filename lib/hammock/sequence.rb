@@ -8,11 +8,12 @@ module Hammock
 
     attr_reader :head, :tail
 
-    def self.from_array(array)
-      return EmptyList.new if array.nil? || array.empty?
-      array.to_a.reverse.inject(EmptyList.new) do |prev, el|
+    def self.from_array(array, meta=nil)
+      return EmptyList.new(meta) if array.nil? || array.empty?
+      ret = array.to_a.reverse.inject(EmptyList.new) do |prev, el|
         new(el, prev)
       end
+      ret.with_meta(meta)
     end
 
     def self.alloc_from(other, meta=nil)

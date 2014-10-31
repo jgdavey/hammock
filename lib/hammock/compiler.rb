@@ -29,7 +29,7 @@ module Hammock
       else
         args = method
       end
-      Sequence.from_array([DOT, target, args]).with_meta(meta)
+      Sequence.from_array([DOT, target, args], meta)
     end
 
     def expand_new(form)
@@ -42,7 +42,7 @@ module Hammock
       else
         args = NEW
       end
-      Sequence.from_array([DOT, klass, args]).with_meta(meta)
+      Sequence.from_array([DOT, klass, args], meta)
     end
 
     def macroexpand1(form, env=RT.global_env)
@@ -108,14 +108,14 @@ module Hammock
       end
       case form
       when List
-        list = Sequence.from_array(new_form).with_meta(meta)
+        list = Sequence.from_array(new_form, meta)
         macroexpand(env, list)
       when Vector
-        Vector.from_array(new_form).with_meta(meta)
+        Vector.from_array(new_form, meta)
       when Map
         Map.from_pairs(new_form).with_meta(meta)
       when Set
-        Set.from_array(new_form).with_meta(meta)
+        Set.from_array(new_form, meta)
       end
     end
 

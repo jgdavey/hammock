@@ -28,8 +28,8 @@ module Hammock
       end
     end
 
-    def self.from_array(items)
-      items.reduce(new) { |set, item| set.add(item) }
+    def self.from_array(items, meta=nil)
+      items.reduce(new(meta)) { |set, item| set.add(item) }
     end
 
     def initialize(meta=nil, trie=Hamster::EmptyTrie)

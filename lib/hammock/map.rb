@@ -39,8 +39,8 @@ module Hammock
       hash.reduce(map) { |m, (k, v)| m.put(k, v) }
     end
 
-    def self.from_array(array)
-      map = new
+    def self.from_array(array, meta=nil)
+      map = new(meta)
       array.each_slice(2) do |pair|
         map = map.put(pair.first, pair.last)
       end

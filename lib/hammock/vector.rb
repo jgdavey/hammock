@@ -34,8 +34,8 @@ module Hammock
       end
     end
 
-    def self.from_array(items)
-      items.reduce(EmptyVector) { |vector, item| vector.add(item) }
+    def self.from_array(items, meta=nil)
+      items.reduce(new(meta)) { |vector, item| vector.add(item) }
     end
 
     def initialize(meta=nil)
@@ -167,7 +167,6 @@ module Hammock
 
     def seq
       return if count == 0
-      # Sequence.from_array(to_a)
       ChunkedSeq.new(self, 0, 0)
     end
 
