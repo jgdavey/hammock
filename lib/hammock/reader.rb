@@ -480,7 +480,7 @@ module Hammock
       argsyms = Thread.current[:arg_env]
       keys = argsyms.keys.to_a
       unless argsyms.empty?
-        higharg = keys.last
+        higharg = keys.max
         if higharg > 0
           (1..higharg).each do |i|
             sym = argsyms[i] || garg(i)
