@@ -42,6 +42,27 @@ module Hammock
     end
     alias head first
 
+    def next?
+      (@offset + 1 < @node.length) || (@i + @node.length < @vec.count)
+    end
+
+    def each
+      return self unless block_given?
+      list = self
+      while list.next?
+        yield(list.head)
+        list = list.next
+      end
+    end
+
+    def to_a
+      ret = []
+      each do |v|
+        ret << v
+      end
+      ret
+    end
+
     def next
       if @offset + 1 < @node.length
         ChunkedSeq.new(@vec, @i, @offset + 1, @node)
@@ -67,6 +88,10 @@ module Hammock
 
     def count
       @vec.count - (@i + @offset)
+    end
+
+    def inspect
+      "[#{to_a.map(&:inspect).join(' ')}]"
     end
   end
 end
