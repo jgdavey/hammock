@@ -454,7 +454,7 @@ module Hammock
     def syntax_quote_expand_list(seq)
       ret = Vector.new
       seq = RT.seq(seq)
-      while !seq.empty?
+      while seq && !seq.empty?
         item = seq.first
         if unquote?(item)
           ret = ret.cons(RT.list(LIST, RT.second(item)))

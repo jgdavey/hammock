@@ -123,7 +123,8 @@ module Hammock
         "list"  => List.new,
         "."     => Host.new,
         "quote" => QuoteExpr.new,
-        "var"   => VarExpr.new
+        "var"   => VarExpr.new,
+        "try"   => Try.new
       }
     end
 
@@ -215,8 +216,6 @@ module Hammock
         nil
       when LazyTransformer, LazySequence
         sequence.seq
-      when List
-        sequence
       when ISeq
         sequence.seq
       else
@@ -442,6 +441,77 @@ module Hammock
     class Throw
       def call(form, env, message_or_error)
         raise message_or_error.evaluate(env)
+      end
+    end
+
+    class Try
+      CATCH = Symbol.intern("catch")
+      FINALLY = Symbol.intern("finally")
+      def call(form, env, *exprs)
+        exp = exprs.reverse
+        catches = []
+        finally = nil
+
+        loop do
+          expr = exp.first
+          if Hammock::List === expr
+            if !finally && expr.first == FINALLY && catches.empty?
+              _, *body = *expr
+              finally = Finally.new(*body)
+              exp.shift
+            elsif expr.first == CATCH
+              _, classname, name, *body = *expr
+              catches << Catch.new(classname.evaluate(env), name, *body)
+              exp.shift
+            else
+              break
+            end
+          else
+            break
+          end
+        end
+
+        exprs = exp.reverse
+        catches.reverse!
+
+        begin
+          Do.new.call(nil, env, *exprs)
+        rescue Exception => e
+          if c = catches.detect {|c| c.handles?(e)}
+            env = env.bind(c.local.name, e)
+            return c.evaluate(env)
+          else
+            raise e
+          end
+        ensure
+          finally.evaluate(env)
+        end
+      end
+
+      class Finally
+        def initialize(*body)
+          @body = body
+        end
+        def evaluate(env)
+          Do.new.call(nil, env, *@body)
+        end
+      end
+
+      class Catch
+        attr_reader :local
+        def initialize(errorclass, local, *body)
+          @errorclass = errorclass
+          @local = local
+          @body = body
+        end
+
+        def handles?(error)
+          @errorclass === error
+        end
+
+        def evaluate(env)
+          Do.new.call(nil, env, *@body)
+        end
       end
     end
 
