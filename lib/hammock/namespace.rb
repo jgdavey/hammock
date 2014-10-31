@@ -21,7 +21,8 @@ module Hammock
     end
 
     def self.name_only(name)
-      if Hammock::Symbol === name
+      case name
+      when Hammock::Symbol, Namespace
         name.name
       else
         name

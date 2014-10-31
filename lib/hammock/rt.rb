@@ -51,19 +51,17 @@ module Hammock
     def self.global_env
       @global_env = Hammock::Environment.new(
         "__stack__" => Vector.new.add("(root)"),
-        "*ns*" => CURRENT_NS,
-        "*in*" => IN,
-        "*out*" => OUT,
-        "*err*" => ERR,
         "RT" => self,
         "Map" => Map,
         "Vector" => Vector,
         "Set" => Hammock::Set,
         "Symbol" => Hammock::Symbol,
         "Keyword" => ::Symbol,
+        "Var" => Hammock::Var,
+        "Atom" => Hammock::Atom,
+        "List" => Hammock::List,
         "Sequence" => Sequence,
-        "Meta" => Meta,
-        "List" => Hammock::List
+        "Meta" => Meta
       )
     end
 
@@ -275,7 +273,15 @@ module Hammock
     end
 
     def self.subvec(vector, start_idx, end_idx)
-      Vector::SubVector.new(vector.meta, vector, start_idx, end_idx)
+      if end_idx < start_idx || start_idx < 0 || end_idx > vector.count
+        raise IndexError
+      end
+
+      if start_idx == end_idx # empty
+        Vector.new
+      else
+        Vector::SubVector.new(vector.meta, vector, start_idx, end_idx)
+      end
     end
 
     def self.divide(num1, num2)

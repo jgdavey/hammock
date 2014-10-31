@@ -1674,7 +1674,7 @@
   {:added "1.1"
    :static true}
   [bindings]
-  (.push_thread_bindings Hammock.Var bindings))
+  (.push_thread_bindings Var bindings))
 
 (defn pop-thread-bindings
   "Pop one set of bindings pushed with push-binding before. It is an error to
@@ -1682,7 +1682,7 @@
   {:added "1.1"
    :static true}
   []
-  (. Hammock.Var pop_thread_bindings))
+  (. Var pop_thread_bindings))
 
 (defn get-thread-bindings
   "Get a map with the Var/value pairs which is currently in effect for the
@@ -1690,7 +1690,7 @@
   {:added "1.1"
    :static true}
   []
-  (. Hammock.Var thread_bindings))
+  (. Var thread_bindings))
 
 (defmacro binding
   "binding => var-symbol init-expr
@@ -1760,12 +1760,12 @@
   [& fntail]
   `(bound-fn* (fn ~@fntail)))
 
-; (defn find-var
-;   "Returns the global var named by the namespace-qualified symbol, or
-;   nil if no var with that name."
-;   {:added "1.0"
-;    :static true}
-;   [sym] (. clojure.lang.Var (find sym)))
+(defn find-var
+  "Returns the global var named by the namespace-qualified symbol, or
+  nil if no var with that name."
+  {:added "1.0"
+   :static true}
+  [sym] (.find Var sym))
 
 ; (defn binding-conveyor-fn
 ;   {:private true
@@ -2090,7 +2090,7 @@
   return false or throw an exception."
   {:added "1.0"
    :static true}
-  ([x] (.new Hammock.Atom x))
+  ([x] (.new Atom x))
   ([x & options] (setup-reference (atom x) options)))
 
 (defn swap!
@@ -3508,18 +3508,18 @@
 ;    :static true}
 ;   [s] (clojure.lang.RT/readString s))
 
-; (defn subvec
-;   "Returns a persistent vector of the items in vector from
-;   start (inclusive) to end (exclusive).  If end is not supplied,
-;   defaults to (count vector). This operation is O(1) and very fast, as
-;   the resulting vector shares structure with the original and no
-;   trimming is done."
-;   {:added "1.0"
-;    :static true}
-;   ([v start]
-;    (subvec v start (count v)))
-;   ([v start end]
-;    (. clojure.lang.RT (subvec v start end))))
+(defn subvec
+  "Returns a persistent vector of the items in vector from
+  start (inclusive) to end (exclusive).  If end is not supplied,
+  defaults to (count vector). This operation is O(1) and very fast, as
+  the resulting vector shares structure with the original and no
+  trimming is done."
+  {:added "1.0"
+   :static true}
+  ([v start]
+   (subvec v start (count v)))
+  ([v start end]
+   (. RT (subvec v start end))))
 
 ; (defmacro with-open
 ;   "bindings => [name init ...]
@@ -4363,16 +4363,16 @@
   {:added "1.0"}
   [& body])
 
-; (defmacro with-out-str
-;   "Evaluates exprs in a context in which *out* is bound to a fresh
-;   StringWriter.  Returns the string created by any nested printing
-;   calls."
-;   {:added "1.0"}
-;   [& body]
-;   `(let [s# (new java.io.StringWriter)]
-;      (binding [*out* s#]
-;        ~@body
-;        (str s#))))
+(defmacro with-out-str
+  "Evaluates exprs in a context in which *out* is bound to a fresh
+  StringWriter.  Returns the string created by any nested printing
+  calls."
+  {:added "1.0"}
+  [& body]
+  `(let [s# (StringIO.)]
+     (binding [*out* s#]
+       ~@body
+       (.string s#))))
 
 ; (defmacro with-in-str
 ;   "Evaluates body in a context in which *in* is bound to a fresh
@@ -5006,11 +5006,11 @@
 ;      (send-off agt fill)
 ;      (drain))))
 
-; (defn class?
-;   "Returns true if x is an instance of Class"
-;   {:added "1.0"
-;    :static true}
-;   [x] (instance? Class x))
+(defn class?
+  "Returns true if x is an instance of Class"
+  {:added "1.0"
+   :static true}
+  [x] (instance? Class x))
 
 ; (defn- is-annotation? [c]
 ;   (and (class? c)
