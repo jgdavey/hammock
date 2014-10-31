@@ -299,9 +299,7 @@
                     m))
               m (conj (if (meta name) (meta name) {}) m)]
           (list 'def (with-meta name m)
-                ;;todo - restore propagation of fn name
-                ;;must figure out how to convey primitive hints to self calls first
-                (cons `fn fdecl) ))))
+                (cons `fn (cons name fdecl))))))
 
 (.macro! (var defn))
 
