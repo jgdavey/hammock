@@ -303,6 +303,13 @@ module Hammock
       parts.join("/").to_sym
     end
 
+    def self.splat_last(target, method, *args)
+      *first, last = *args
+      target.send(method, *first, *last)
+    rescue => e
+      binding.pry
+    end
+
     class InNS
       def call(_, env, form)
         ns = Namespace.find_or_create(form.evaluate(env))

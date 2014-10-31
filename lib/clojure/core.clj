@@ -5281,13 +5281,13 @@
 ;   [e]
 ;   (clojure.lang.EnumerationSeq/create e))
 
-; (defn format
-;   "Formats a string using java.lang.String.format, see java.util.Formatter for format
-;   string syntax"
-;   {:added "1.0"
-;    :static true}
-;   ^String [fmt & args]
-;   (String/format fmt (to-array args)))
+(defn format
+  "Formats a string using java.lang.String.format, see java.util.Formatter for format
+  string syntax"
+  {:added "1.0"
+   :static true}
+  ^String [fmt & args]
+  (. RT (splat_last Kernel :sprintf fmt args)))
 
 ; (defn printf
 ;   "Prints formatted output, as per format"
