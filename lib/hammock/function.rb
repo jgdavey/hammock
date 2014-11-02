@@ -82,7 +82,11 @@ module Hammock
           body.shift
         end
         if RecurLocals === ret
-          locals = ret
+          if ret.to_a.last.nil?
+            locals = ret.to_a[0..-2]
+          else
+            locals = ret
+          end
         else
           break ret
         end
@@ -123,8 +127,10 @@ module Hammock
 
         if variadic?
           lastarg = nil
-          tail = args[max..-1]
-          lastarg = Sequence.from_array(tail) if tail.any?
+          if args.length > max
+            tail = args[max..-1]
+            lastarg = Sequence.from_array(tail) if tail && !tail.empty?
+          end
           env = env.bind @variadic_name, lastarg
         end
 
