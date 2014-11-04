@@ -6268,6 +6268,9 @@
 ;   ([f val coll]
 ;      (clojure.core.protocols/coll-reduce coll f val)))
 
+; TODO Protocol reduce
+(def reduce reduce1)
+
 ; (extend-protocol clojure.core.protocols/IKVReduce
 ;  nil
 ;  (kv-reduce
@@ -6311,17 +6314,17 @@
 ;   ([f init coll]
 ;      (clojure.core.protocols/kv-reduce coll f init)))
 
-; (defn completing
-;   "Takes a reducing function f of 2 args and returns a fn suitable for
-;   transduce by adding an arity-1 signature that calls cf (default -
-;   identity) on the result argument."
-;   {:added "1.7"}
-;   ([f] (completing f identity))
-;   ([f cf]
-;      (fn
-;        ([] (f))
-;        ([x] (cf x))
-;        ([x y] (f x y)))))
+(defn completing
+  "Takes a reducing function f of 2 args and returns a fn suitable for
+  transduce by adding an arity-1 signature that calls cf (default -
+  identity) on the result argument."
+  {:added "1.7"}
+  ([f] (completing f identity))
+  ([f cf]
+     (fn
+       ([] (f))
+       ([x] (cf x))
+       ([x y] (f x y)))))
 
 ; (defn transduce
 ;   "reduce with a transformation of f (xf). If init is not
@@ -6335,53 +6338,67 @@
 ;   ([xform f coll] (transduce xform f (f) coll))
 ;   ([xform f init coll]
 ;      (let [f (xform f)
-;            ret (if (instance? clojure.lang.IReduce coll)
+;            ret (if (.respond_to? instance? clojure.lang.IReduce coll)
 ;                  (.reduce ^clojure.lang.IReduce coll f init)
 ;                  (clojure.core.protocols/coll-reduce coll f init))]
 ;        (f ret))))
 
-; (defn into
-;   "Returns a new coll consisting of to-coll with all of the items of
-;   from-coll conjoined. A transducer may be supplied."
-;   {:added "1.0"
-;    :static true}
-;   ([to from]
-;      (if (instance? clojure.lang.IEditableCollection to)
-;        (with-meta (persistent! (reduce conj! (transient to) from)) (meta to))
-;        (reduce conj to from)))
-;   ([to xform from]
-;      (if (instance? clojure.lang.IEditableCollection to)
-;        (with-meta (persistent! (transduce xform conj! (transient to) from)) (meta to))
-;        (transduce xform conj to from))))
+(defn transduce
+  "reduce with a transformation of f (xf). If init is not
+  supplied, (f) will be called to produce it. f should be a reducing
+  step function that accepts both 1 and 2 arguments, if it accepts
+  only 2 you can add the arity-1 with 'completing'. Returns the result
+  of applying (the transformed) xf to init and the first item in coll,
+  then applying xf to that result and the 2nd item, etc. If coll
+  contains no items, returns init and f is not called. Note that
+  certain transforms may inject or skip items."  {:added "1.7"}
+  ([xform f coll]
+   (transduce xform f (f) coll))
+  ([xform f init coll]
+   (let [f (xform f)
+         ret (reduce f init coll)]
+     (f ret))))
 
-; (defn mapv
-;   "Returns a vector consisting of the result of applying f to the
-;   set of first items of each coll, followed by applying f to the set
-;   of second items in each coll, until any one of the colls is
-;   exhausted.  Any remaining items in other colls are ignored. Function
-;   f should accept number-of-colls arguments."
-;   {:added "1.4"
-;    :static true}
-;   ([f coll]
-;      (-> (reduce (fn [v o] (conj! v (f o))) (transient []) coll)
-;          persistent!))
-;   ([f c1 c2]
-;      (into [] (map f c1 c2)))
-;   ([f c1 c2 c3]
-;      (into [] (map f c1 c2 c3)))
-;   ([f c1 c2 c3 & colls]
-;      (into [] (apply map f c1 c2 c3 colls))))
+(defn into
+  "Returns a new coll consisting of to-coll with all of the items of
+  from-coll conjoined. A transducer may be supplied."
+  {:added "1.0"
+   :static true}
+  ([to from]
+     (if false ;(instance? clojure.lang.IEditableCollection to)
+       (with-meta (persistent! (reduce conj! (transient to) from)) (meta to))
+       (reduce conj to from)))
+  ([to xform from]
+     (if false ;(instance? clojure.lang.IEditableCollection to)
+       (with-meta (persistent! (transduce xform conj! (transient to) from)) (meta to))
+       (transduce xform conj to from))))
 
-; (defn filterv
-;   "Returns a vector of the items in coll for which
-;   (pred item) returns true. pred must be free of side-effects."
-;   {:added "1.4"
-;    :static true}
-;   [pred coll]
-;   (-> (reduce (fn [v o] (if (pred o) (conj! v o) v))
-;               (transient [])
-;               coll)
-;       persistent!))
+(defn mapv
+  "Returns a vector consisting of the result of applying f to the
+  set of first items of each coll, followed by applying f to the set
+  of second items in each coll, until any one of the colls is
+  exhausted.  Any remaining items in other colls are ignored. Function
+  f should accept number-of-colls arguments."
+  {:added "1.4"
+   :static true}
+  ([f coll]
+     (reduce (fn [v o] (conj v (f o))) [] coll))
+  ([f c1 c2]
+     (into [] (map f c1 c2)))
+  ([f c1 c2 c3]
+     (into [] (map f c1 c2 c3)))
+  ([f c1 c2 c3 & colls]
+     (into [] (apply map f c1 c2 c3 colls))))
+
+(defn filterv
+  "Returns a vector of the items in coll for which
+  (pred item) returns true. pred must be free of side-effects."
+  {:added "1.4"
+   :static true}
+  [pred coll]
+  (reduce (fn [v o] (if (pred o)
+                      (conj v o)
+                      v)) [] coll))
 
 ; (require '[clojure.java.io :as jio])
 
@@ -7038,17 +7055,17 @@
        (reduced ret)
        ret)))
 
-; (defn cat
-;   "A transducer which concatenates the contents of each input, which must be a
-;   collection, into the reduction."
-;   {:added "1.7"}
-;   [f1]
-;   (let [rf1 (preserving-reduced f1)]
-;     (fn
-;       ([] (f1))
-;       ([result] (f1 result))
-;       ([result input]
-;          (reduce rf1 result input)))))
+(defn cat
+  "A transducer which concatenates the contents of each input, which must be a
+  collection, into the reduction."
+  {:added "1.7"}
+  [f1]
+  (let [rf1 (preserving-reduced f1)]
+    (fn
+      ([] (f1))
+      ([result] (f1 result))
+      ([result input]
+         (reduce rf1 result input)))))
 
 (defn dedupe
   "Returns a lazy sequence removing consecutive duplicates in coll.
