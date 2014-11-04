@@ -134,12 +134,12 @@ module Hammock
 
       fn = head.evaluate(env)
 
-      if fn.respond_to?(:trace) && (t = fn.trace)
-        env = env.bind("__stack__", env["__stack__"].add(t))
-      end
-
       if Var === fn
         fn = fn.deref
+      end
+
+      if fn.respond_to?(:trace) && (t = fn.trace)
+        env = env.bind("__stack__", env["__stack__"].add(t))
       end
 
       case fn

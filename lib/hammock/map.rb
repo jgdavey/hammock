@@ -155,17 +155,20 @@ module Hammock
         assoc(obj.get(0), obj.get(1))
       when Hamster::Trie::Entry
         assoc(obj.key, obj.value)
+      when obj.respond_to?(:to_a)
+        put *obj
       else
-        # seq?
+        raise "You passed #{pair} as an argument to conj, but needs an Array-like arg"
       end
     end
 
     def conj(pair)
       return merge(pair) if Map === pair
-      unless pair.respond_to?(:to_a)
+      if pair.respond_to?(:to_a)
+        put *pair
+      else
         raise "You passed #{pair} as an argument to conj, but needs an Array-like arg"
       end
-      put *pair
     end
 
     def empty

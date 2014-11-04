@@ -130,7 +130,7 @@ module Hammock
           char = io.getc
         end
 
-        raise "Unexpected EOF at line #{io.line_number}" unless char
+        break if io.eof?
 
         if char.match(/\d/)
           break read_number(io, char)
@@ -152,8 +152,6 @@ module Hammock
 
         token = read_token(io, char)
         break interpret_token(io, token)
-
-        break if io.eof?
       end
     end
 

@@ -74,6 +74,9 @@ module Hammock
     def self.resolve_path(path)
       return path if ::Pathname === path
       pathname = nil
+      if File.extname(path).empty?
+        path += ".clj"
+      end
       LOADPATH.deref.each do |dir|
         pn = Pathname.new File.join(dir, path)
         if pn.exist?
@@ -93,6 +96,7 @@ module Hammock
     end
 
     def self.load_resource(file)
+      return_to_ns = CURRENT_NS.deref
       unless file.respond_to?(:getc)
         file = File.open(file)
       end
@@ -101,6 +105,7 @@ module Hammock
       end
     ensure
       file.close
+      CURRENT_NS.bind_root(return_to_ns)
     end
 
     def self.compile_and_eval(form)
@@ -249,10 +254,13 @@ module Hammock
     end
 
     def self.count(sequence)
-      if sequence
-        sequence.count
-      else
+      case sequence
+      when NilClass
         0
+      when String
+        sequence.length
+      else
+        sequence.count
       end
     end
 
@@ -306,8 +314,12 @@ module Hammock
     def self.splat_last(target, method, *args)
       *first, last = *args
       target.send(method, *first, *last)
-    rescue => e
-      binding.pry
+    end
+
+    def self.find(coll, key)
+      if Map === coll
+        coll.entry_at(key)
+      end
     end
 
     class InNS

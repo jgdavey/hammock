@@ -62,6 +62,10 @@ module Hammock
       end
     end
 
+    def empty?
+      false
+    end
+
     def seq
       self
     end

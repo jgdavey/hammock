@@ -29,6 +29,7 @@ module Hammock
     def cons(item)
       Sequence.new(item, self)
     end
+    alias conj cons
 
     def each
       return self unless block_given?

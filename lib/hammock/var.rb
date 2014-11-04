@@ -161,6 +161,9 @@ module Hammock
       if meta[:private]
         @public = false
       end
+      if meta[:dynamic]
+        @dynamic = true
+      end
       @meta = meta
     end
 
