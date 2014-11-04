@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+
+lib = File.expand_path("../../lib", __FILE__)
+$:.unshift(lib) unless $:.include?(lib)
+$:.push(Dir.pwd) unless $:.include?(Dir.pwd)
+
+
+require 'optparse'
+options = {:main => "-main"}
+
+opt_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options] NS [args...]"
+
+  opts.on("-m", "--main MAIN_FN", "Specific main function (default -main)") do |f|
+    options[:main] = f
+  end
+
+  opts.on_tail("-h", "--help", "Show this message") do
+    puts opts
+    exit
+  end
+end
+
+opt_parser.parse!
+
+if ns = ARGV.shift
+  require 'hammock/rt'
+
+  file = ns.gsub(".","/").gsub("-","_")
+  if path = Hammock::RT.resolve_path(file)
+    $stderr.puts "Loading #{path}"
+  else
+    $stderr.puts "Cannot find file `#{file}' in load path"
+    exit(1)
+  end
+
+  Hammock::RT.bootstrap!
+  Hammock::RT.require(path)
+
+  if namespace = Hammock::Namespace.find(ns)
+    var = namespace.find_var!(options[:main])
+    var.deref.call(*ARGV)
+  else
+    $stderr.puts "No such namespace #{ns}."
+    exit(127)
+  end
+else
+  $stderr.puts opt_parser
+  exit(1)
+end
