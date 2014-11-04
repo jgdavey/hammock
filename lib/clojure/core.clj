@@ -797,38 +797,23 @@
 
 (def inc' inc)
 
-; ;; reduce is defined again later after InternalReduce loads
-; (defn ^:private ^:static
-;   reduce1
-;        ([f coll]
-;              (let [s (seq coll)]
-;                (if s
-;          (reduce1 f (first s) (next s))
-;                  (f))))
-;        ([f val coll]
-;           (let [s (seq coll)]
-;             (if s
-;               (if (chunked-seq? s)
-;                 (recur f
-;                        (.reduce (chunk-first s) f val)
-;                        (chunk-next s))
-;                 (recur f (f val (first s)) (next s)))
-;          val))))
-
-
-;; TODO: Implement chunked-cons version
+;; reduce is defined again later after InternalReduce loads
 (defn ^:private ^:static
-   reduce1
-   ([f coll]
-    (let [s (seq coll)]
-       (if s
-          (reduce1 f (first s) (next s))
-          (f))))
-   ([f val coll]
-    (let [s (seq coll)]
-       (if s
-          (recur f (f val (first s)) (next s))
-          val))))
+  reduce1
+       ([f coll]
+             (let [s (seq coll)]
+               (if s
+         (reduce1 f (first s) (next s))
+                 (f))))
+       ([f val coll]
+          (let [s (seq coll)]
+            (if s
+              (if (chunked-seq? s)
+                (recur f
+                       (.reduce (chunk-first s) f val)
+                       (chunk-next s))
+                (recur f (f val (first s)) (next s)))
+         val))))
 
 (defn reverse
   "Returns a seq of the items in coll in reverse order. Not lazy."
