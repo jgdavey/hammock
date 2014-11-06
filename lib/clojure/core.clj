@@ -5364,7 +5364,7 @@
 (defonce ^:dynamic
   ^{:private true
     :doc "True while a verbose load is pending"}
-  *loading-verbosely* true)
+  *loading-verbosely* false)
 
 (defn- throw-if
   "Throws a CompilerException with a message if pred is true"
