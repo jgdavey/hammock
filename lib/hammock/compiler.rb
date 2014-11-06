@@ -125,6 +125,8 @@ module Hammock
       case form
       when Var
         form.root
+      when EmptyList
+        form
       when Hammock::Symbol
         return env[form.name] if env.key?(form.name) && !form.ns
         namespace = form.namespace(env["__namespace__"])
@@ -135,23 +137,6 @@ module Hammock
         else
           raise "Unable to resolve symbol #{form.name} in this context"
         end
-      when Map
-        ret = []
-        form.each do |k,v|
-          ret << [evaluate(env, k), evaluate(env, v)]
-        end
-        Map.from_pairs(ret, form.meta)
-      when RT::Finally, RT::Catch
-        RT::Do.new.call(nil, env, *form.body)
-      when Hammock::Set, Vector
-        klass = form.class
-        ret = []
-        form.each do |v|
-          ret << evaluate(env, v)
-        end
-        klass.from_array(ret, form.meta)
-      when EmptyList
-        form
       when List
         if s = special(form)
           return s.call(form, env, *form.tail)
@@ -189,6 +174,21 @@ module Hammock
         else
           raise Error, "What? #{head.inspect}, #{fn.inspect}, #{form}, #{form.meta}"
         end
+      when Map
+        ret = []
+        form.each do |k,v|
+          ret << [evaluate(env, k), evaluate(env, v)]
+        end
+        Map.from_pairs(ret, form.meta)
+      when RT::Finally, RT::Catch
+        RT::Do.new.call(nil, env, *form.body)
+      when Hammock::Set, Vector
+        klass = form.class
+        ret = []
+        form.each do |v|
+          ret << evaluate(env, v)
+        end
+        klass.from_array(ret, form.meta)
       else # un-evaluable
         form
       end
