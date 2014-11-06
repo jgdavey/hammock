@@ -62,6 +62,23 @@ module Hammock
       end
     end
 
+    def each
+      return self unless block_given?
+      list = self
+      until list.nil? || list.empty?
+        yield(list.head)
+        list = list.tail
+      end
+    end
+
+    def to_a
+      ret = []
+      each do |i|
+        ret << i
+      end
+      ret
+    end
+
     def empty?
       false
     end
@@ -69,5 +86,23 @@ module Hammock
     def seq
       self
     end
+
+    def empty
+      EmptyList.new
+    end
+
+    def dup
+      self
+    end
+    alias clone dup
+
+    def to_list
+      self
+    end
+
+    def inspect
+      "(#{to_a.map(&:inspect).join(' ')})"
+    end
+    alias to_s inspect
   end
 end

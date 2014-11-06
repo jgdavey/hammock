@@ -1079,13 +1079,12 @@
 ;   [num div]
 ;     (. clojure.lang.Numbers (quotient num div)))
 
-; (defn rem
-;   "remainder of dividing numerator by denominator."
-;   {:added "1.0"
-;    :static true
-;    :inline (fn [x y] `(. clojure.lang.Numbers (remainder ~x ~y)))}
-;   [num div]
-;     (. clojure.lang.Numbers (remainder num div)))
+(defn rem
+  "remainder of dividing numerator by denominator."
+  {:added "1.0"
+   :static true}
+  [num div]
+  (.remainder num div))
 
 ; (defn rationalize
 ;   "returns the rational value of num"
@@ -3240,15 +3239,15 @@
   [x]
   (instance? Numeric x))
 
-; (defn mod
-;   "Modulus of num and div. Truncates toward negative infinity."
-;   {:added "1.0"
-;    :static true}
-;   [num div]
-;   (let [m (rem num div)]
-;     (if (or (zero? m) (= (pos? num) (pos? div)))
-;       m
-;       (+ m div))))
+(defn mod
+  "Modulus of num and div. Truncates toward negative infinity."
+  {:added "1.0"
+   :static true}
+  [num div]
+  (let [m (rem num div)]
+    (if (or (zero? m) (= (pos? num) (pos? div)))
+      m
+      (+ m div))))
 
 (defn ratio?
   "Returns true if n is a Ratio"
