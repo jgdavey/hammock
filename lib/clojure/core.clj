@@ -5447,7 +5447,7 @@
         need-ns (or as use)
         filter-opts (select-keys opts '(:exclude :only :rename :refer))
         undefined-on-entry (not (find-ns lib))]
-    (binding [*loading-verbosely* (or *loading-verbosely* verbose)]
+    (binding [*loading-verbosely* (if *loading-verbosely* true verbose)]
       (if load
         (try
           (load lib need-ns require)
@@ -5457,7 +5457,7 @@
             (throw e)))
         (throw-if (and need-ns (not (find-ns lib)))
                   "namespace '%s' not found" lib))
-      (when (and need-ns *loading-verbosely*)
+      (when (if need-ns *loading-verbosely* false)
         (printf "(clojure.core/in-ns '%s)\n" (ns-name *ns*)))
       (when as
         (when *loading-verbosely*
