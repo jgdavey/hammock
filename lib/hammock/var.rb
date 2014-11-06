@@ -96,6 +96,8 @@ module Hammock
       @rev = 0
     end
 
+    alias namespace ns
+
     def trace
       return unless meta
       "#{meta[:file]}:#{meta[:line]} in #@symbol"
@@ -165,10 +167,6 @@ module Hammock
         @dynamic = true
       end
       @meta = meta
-    end
-
-    def evaluate(env)
-      @root
     end
 
     def call(*args)

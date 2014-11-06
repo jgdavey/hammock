@@ -43,10 +43,6 @@ module Hammock
       self
     end
 
-    def evaluate(env)
-      Compiler.evaluate(env, self)
-    end
-
     def with_meta(meta)
       self.class.new(head, tail, meta)
     end

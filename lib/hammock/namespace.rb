@@ -70,7 +70,7 @@ module Hammock
     def publics
       ret = []
       mappings.each do |k,v|
-        if Var === v && v.ns == self && v.public?
+        if Var === v && v.namespace == self && v.public?
           ret << [k,v]
         end
       end
@@ -80,7 +80,7 @@ module Hammock
     def interns
       ret = []
       mappings.each do |k,v|
-        if Var === v && v.ns == self
+        if Var === v && v.namespace == self
           ret << [k,v]
         end
       end
@@ -90,7 +90,7 @@ module Hammock
     def refers
       ret = []
       mappings.each do |k,v|
-        if Var === v && v.ns != self
+        if Var === v && v.namespace != self
           ret << [k,v]
         end
       end

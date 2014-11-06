@@ -214,7 +214,8 @@ describe Hammock::Reader do
   end
 
   it "reads syntax quoted clojure.core things" do
-    read_string("(def foo 1)").evaluate(Hammock::RT.global_env)
+    form = read_string("(def foo 1)")
+    Hammock::Compiler.evaluate(Hammock::RT.global_env, form)
     str = '`foo'
     result = read_string(str)
     expected = Hammock::Symbol.intern("clojure.core", "foo")

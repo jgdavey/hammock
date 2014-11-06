@@ -170,10 +170,6 @@ module Hammock
       ChunkedSeq.new(self, 0, 0)
     end
 
-    def evaluate(env)
-      map { |e| e.evaluate(env) }
-    end
-
     def array_for(i)
       leaf_node_for(@root, root_index_bits, i)
     end

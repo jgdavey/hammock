@@ -8,7 +8,7 @@ module Hammock
     NEW = Symbol.intern("new")
 
     def namespace(env, sym)
-      env["__namespace__"] || sym.ns || RT::CURRENT_NS.deref
+      env["__namespace__"] || sym.namespace || RT::CURRENT_NS.deref
     end
 
     def find_var(env, sym)
@@ -119,48 +119,78 @@ module Hammock
       end
     end
 
-    def evaluate(env, list)
-      list = macroexpand(env, list)
+    def evaluate(env, form)
+      form = macroexpand(env, form)
 
-      unless list.is_a?(List)
-        return list
-      end
-
-      if s = special(list)
-        return s.call(list, env, *list.tail)
-      end
-
-      head = list.car
-
-      fn = head.evaluate(env)
-
-      if Var === fn
-        fn = fn.deref
-      end
-
-      if fn.respond_to?(:trace) && (t = fn.trace)
-        env = env.bind("__stack__", env["__stack__"].add(t))
-      end
-
-      case fn
-      when IFn
-        args = (list.tail || []).to_a.map { |elem| elem.evaluate(env) }
-        begin
-          fn.call *args
-        rescue => e
-          raise e.class, e.message, (env["__stack__"].to_a.reverse)
+      case form
+      when Var
+        form.root
+      when Hammock::Symbol
+        return env[form.name] if env.key?(form.name) && !form.ns
+        namespace = form.namespace(env["__namespace__"])
+        if namespace.has_var?(form.name) && (v = namespace.find_var(form.name))
+          v.deref
+        elsif form.constant
+          form.constant
+        else
+          raise "Unable to resolve symbol #{form.name} in this context"
         end
-      when ::Symbol
-        args = (list.tail || []).to_a.map { |elem| elem.evaluate(env) }
-        if args.count > 2
-          raise ArgumentError, "more than one arg passed as argument to Keyword #{fn}", env["__stack__"].to_a
+      when Map
+        ret = []
+        form.each do |k,v|
+          ret << [evaluate(env, k), evaluate(env, v)]
         end
-        map, default = *args
-        if ILookup === map
-          map.fetch(fn, default)
+        Map.from_pairs(ret, form.meta)
+      when RT::Finally, RT::Catch
+        RT::Do.new.call(nil, env, *form.body)
+      when Hammock::Set, Vector
+        klass = form.class
+        ret = []
+        form.each do |v|
+          ret << evaluate(env, v)
         end
-      else
-        raise Error, "What? #{head.inspect}, #{fn.inspect}, #{list}, #{list.meta}"
+        klass.from_array(ret, form.meta)
+      when EmptyList
+        form
+      when List
+        if s = special(form)
+          return s.call(form, env, *form.tail)
+        end
+
+        head = form.car
+
+        fn = evaluate(env, head)
+
+        if Var === fn
+          fn = fn.deref
+        end
+
+        if fn.respond_to?(:trace) && (t = fn.trace)
+          env = env.bind("__stack__", env["__stack__"].add(t))
+        end
+
+        case fn
+        when IFn
+          args = (form.tail || []).to_a.map { |elem| evaluate(env, elem) }
+          begin
+            fn.call *args
+          rescue => e
+            raise e.class, e.message, (env["__stack__"].to_a.reverse)
+          end
+        when ::Symbol
+          args = (form.tail || []).to_a.map { |elem| evaluate(env, elem) }
+          if args.count > 2
+            raise ArgumentError, "more than one arg passed as argument to Keyword #{fn}", env["__stack__"].to_a
+          end
+          map, default = *args
+          if ILookup === map
+            map.fetch(fn, default)
+          end
+        else
+          raise Error, "What? #{head.inspect}, #{fn.inspect}, #{form}, #{form.meta}"
+        end
+      else # un-evaluable
+        form
       end
     end
   end

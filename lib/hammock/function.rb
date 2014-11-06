@@ -78,7 +78,7 @@ module Hammock
         ret = nil
         body = arity.body.dup
         until body.empty?
-          ret = body.first.evaluate(env)
+          ret = Compiler.evaluate(env, body.first)
           body.shift
         end
         if RecurLocals === ret

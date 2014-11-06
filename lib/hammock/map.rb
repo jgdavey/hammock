@@ -47,8 +47,8 @@ module Hammock
       map
     end
 
-    def self.from_pairs(array)
-      map = new
+    def self.from_pairs(array, meta=nil)
+      map = new(meta)
       array.each do |pair|
         map = map.put(pair.first, pair.last)
       end
@@ -192,14 +192,6 @@ module Hammock
       ret
     end
     alias pairs to_a
-
-    def evaluate(env)
-      ret = []
-      each do |k,v|
-        ret << [k.evaluate(env), v.evaluate(env)]
-      end
-      self.class.from_pairs(ret)
-    end
 
     def inspect
       out = []

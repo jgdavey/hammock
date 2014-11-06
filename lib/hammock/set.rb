@@ -116,10 +116,6 @@ module Hammock
       Sequence.from_array(to_a)
     end
 
-    def evaluate(env)
-      map { |e| e.evaluate(env) }
-    end
-
     def eql?(other)
       instance_of?(other.class) && @trie.eql?(other.instance_variable_get(:@trie))
     end

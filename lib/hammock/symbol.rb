@@ -2,7 +2,7 @@ module Hammock
   class Symbol
     include Meta
 
-    attr_reader :name
+    attr_reader :name, :ns
 
     def self.intern(*args)
       return args.first if Hammock::Symbol === args.first
@@ -34,18 +34,6 @@ module Hammock
     end
     alias eql? ==
 
-    def evaluate(env)
-      return env[name] if env.key?(name) && !@ns
-      namespace = context(env["__namespace__"])
-      if namespace.has_var?(name) && (v = namespace.find_var(name))
-        v.deref
-      elsif constant
-        constant
-      else
-        raise "Unable to resolve symbol #@name in this context"
-      end
-    end
-
     def constant
       return @constant if defined?(@constant)
       n = name.gsub(".", "::")
@@ -53,10 +41,6 @@ module Hammock
                     Object.const_defined?(n) && Object.const_get(n)
                   rescue NameError
                   end
-    end
-
-    def ns
-      @ns && Namespace.find(@ns)
     end
 
     def inspect
@@ -68,7 +52,7 @@ module Hammock
     end
     alias to_s inspect
 
-    def context(contextual)
+    def namespace(contextual=nil)
       inns = Hammock::RT::CURRENT_NS.deref
       prefer_ns = contextual || inns
       if @ns

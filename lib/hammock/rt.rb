@@ -18,7 +18,6 @@ require 'hammock/atom'
 require 'hammock/volatile'
 require 'hammock/chunked_cons'
 require 'hammock/chunk_buffer'
-require 'hammock/core_ext'
 
 module Hammock
   class RT
@@ -109,7 +108,8 @@ module Hammock
     end
 
     def self.compile_and_eval(form)
-      Compiler.compile(global_env, form).evaluate(global_env)
+      compiled = Compiler.compile(global_env, form)
+      Compiler.evaluate(global_env, compiled)
     end
 
     def self.specials
@@ -324,7 +324,7 @@ module Hammock
 
     class InNS
       def call(_, env, form)
-        ns = Namespace.find_or_create(form.evaluate(env))
+        ns = Namespace.find_or_create(Compiler.evaluate(env, form))
         CURRENT_NS.bind_root(ns)
       end
     end
@@ -335,7 +335,7 @@ module Hammock
       def call(_, env, sym, val=Undefined)
         ns = CURRENT_NS.deref
         var = ns.find_var(sym) || ns.intern(sym)
-        var.bind_root(val.evaluate(env)) unless val == Undefined
+        var.bind_root(Compiler.evaluate(env, val)) unless val == Undefined
         var.meta = sym.meta
         var
       end
@@ -343,10 +343,10 @@ module Hammock
 
     class If
       def call(_, env, predicate, then_clause, else_clause=nil)
-        if predicate.evaluate(env)
-          then_clause.evaluate(env)
+        if Compiler.evaluate(env, predicate)
+          Compiler.evaluate(env, then_clause)
         else
-          else_clause.evaluate(env)
+          Compiler.evaluate(env, else_clause)
         end
       end
     end
@@ -356,7 +356,7 @@ module Hammock
         ret = nil
         b = body.to_a
         until b.empty?
-          ret = b.first.evaluate(env)
+          ret = Compiler.evaluate(env, b.first)
           b.shift
         end
         ret
@@ -370,7 +370,7 @@ module Hammock
         end
 
         bindings.to_a.each_slice(2) do |k, v|
-          env = env.bind(k.name, v.evaluate(env))
+          env = env.bind(k.name, Compiler.evaluate(env, v))
         end
 
         Do.new.call(_, env, *body)
@@ -424,7 +424,7 @@ module Hammock
         locals = LoopLocals.empty
 
         bindings.to_a.each_slice(2) do |k, v|
-          locals = locals.bind(k.name, v.evaluate(env))
+          locals = locals.bind(k.name, Compiler.evaluate(env, v))
         end
 
         loop do
@@ -432,7 +432,7 @@ module Hammock
           ret = nil
           b = body.to_a.dup
           until b.empty?
-            ret = b.first.evaluate(env)
+            ret = Compiler.evaluate(env, b.first)
             b.shift
           end
           ret
@@ -452,20 +452,20 @@ module Hammock
           *first, last = *args
           args = first + last.to_a
         end
-        Sequence.from_array(args.to_a.map {|arg| arg.evaluate(env)})
+        Sequence.from_array(args.to_a.map {|arg| Compiler.evaluate(env, arg)})
       end
     end
 
     class Recur
       def call(_, env, *args)
-        args = args.to_a.map {|arg| arg.evaluate(env)}
+        args = args.to_a.map {|arg| Compiler.evaluate(env, arg)}
         RecurLocals.new(args)
       end
     end
 
     class Throw
       def call(form, env, message_or_error)
-        raise message_or_error.evaluate(env)
+        raise Compiler.evaluate(env, message_or_error)
       end
     end
 
@@ -486,7 +486,7 @@ module Hammock
               exp.shift
             elsif expr.first == CATCH
               _, classname, name, *body = *expr
-              catches << Catch.new(classname.evaluate(env), name, *body)
+              catches << Catch.new(Compiler.evaluate(env, classname), name, *body)
               exp.shift
             else
               break
@@ -504,39 +504,34 @@ module Hammock
         rescue Exception => e
           if c = catches.detect {|c| c.handles?(e)}
             env = env.bind(c.local.name, e)
-            return c.evaluate(env)
+            return Compiler.evaluate(env, c)
           else
             raise e
           end
         ensure
-          finally.evaluate(env)
+          Compiler.evaluate(env, finally)
         end
       end
 
-      class Finally
-        def initialize(*body)
-          @body = body
-        end
-        def evaluate(env)
-          Do.new.call(nil, env, *@body)
-        end
+    end
+
+    class Finally
+      attr_reader :body
+      def initialize(*body)
+        @body = body
+      end
+    end
+
+    class Catch
+      attr_reader :local, :body
+      def initialize(errorclass, local, *body)
+        @errorclass = errorclass
+        @local = local
+        @body = body
       end
 
-      class Catch
-        attr_reader :local
-        def initialize(errorclass, local, *body)
-          @errorclass = errorclass
-          @local = local
-          @body = body
-        end
-
-        def handles?(error)
-          @errorclass === error
-        end
-
-        def evaluate(env)
-          Do.new.call(nil, env, *@body)
-        end
+      def handles?(error)
+        @errorclass === error
       end
     end
 
@@ -547,15 +542,15 @@ module Hammock
 
         if Sequence === args.first
           method, *arguments = *args.first
-          arguments = arguments.to_a.map {|arg| arg.evaluate(env)}
+          arguments = arguments.to_a.map {|arg| Compiler.evaluate(env, arg)}
         end
-        target.evaluate(env).send(method.name, *arguments)
+        Compiler.evaluate(env, target).send(method.name, *arguments)
       end
     end
 
     class VarExpr
       def call(list, env, sym)
-        namespace = env["__namespace__"] || sym.ns || CURRENT_NS.deref
+        namespace = env["__namespace__"] || sym.namespace || CURRENT_NS.deref
         if namespace.has_var?(sym.name)
           namespace.find_var(sym.name)
         else
