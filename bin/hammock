@@ -15,6 +15,11 @@ opt_parser = OptionParser.new do |opts|
     options[:main] = f
   end
 
+  opts.on("-r", "--repl", "Start a REPL")do
+    require 'hammock/repl'
+    Hammock::REPL.start
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts opts
     exit
