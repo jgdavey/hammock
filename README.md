@@ -74,6 +74,7 @@ Planned Features
 * Queue
 * promise/deliver
 * multimethod "prefer"
+* letfn
 * spit/slurp
 
 
