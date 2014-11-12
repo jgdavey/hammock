@@ -713,16 +713,12 @@
   ([x y & more]
    (not (apply = x y more))))
 
-; (defn compare
-;   "Comparator. Returns a negative number, zero, or a positive number
-;   when x is logically 'less than', 'equal to', or 'greater than'
-;   y. Same as Java x.compareTo(y) except it also works for nil, and
-;   compares numbers and collections in a type-independent manner. x
-;   must implement Comparable"
-;   {
-;    :inline (fn [x y] `(. clojure.lang.Util compare ~x ~y))
-;    :added "1.0"}
-;   [x y] (. clojure.lang.Util (compare x y)))
+(defn compare
+  "Comparator. Returns a negative number, zero, or a positive number
+  when x is logically 'less than', 'equal to', or 'greater than'
+  y. Same as Ruby's <=>."
+  {:added "1.0"}
+  [x y] (.<=> x y))
 
 (defmacro and
   "Evaluates exprs one at a time, from left to right. If a form
@@ -2650,14 +2646,14 @@
                (next vs))
         map)))
 
-; (defn line-seq
-;   "Returns the lines of text from rdr as a lazy sequence of strings.
-;   rdr must implement java.io.BufferedReader."
-;   {:added "1.0"
-;    :static true}
-;   [^java.io.BufferedReader rdr]
-;   (when-let [line (.readLine rdr)]
-;     (cons line (lazy-seq (line-seq rdr)))))
+(defn line-seq
+  "Returns the lines of text from rdr as a lazy sequence of strings.
+  rdr must be a Ruby IO-like object."
+  {:added "1.0"
+   :static true}
+  [rdr]
+  (when-let [line (.gets rdr)]
+    (cons line (lazy-seq (line-seq rdr)))))
 
 ; (defn comparator
 ;   "Returns an implementation of java.util.Comparator based upon pred."
