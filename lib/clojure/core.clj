@@ -4512,15 +4512,15 @@
                     (mapcat walk (children node))))))]
      (walk root)))
 
-; (defn file-seq
-;   "A tree seq on java.io.Files"
-;   {:added "1.0"
-;    :static true}
-;   [dir]
-;     (tree-seq
-;      (fn [^java.io.File f] (. f (isDirectory)))
-;      (fn [^java.io.File d] (seq (. d (listFiles))))
-;      dir))
+(defn file-seq
+  "A tree seq on Pathnames"
+  {:added "1.0"
+   :static true}
+  [dir]
+    (tree-seq
+     (fn [f] (. f (directory?)))
+     (fn [d] (seq (. d (children))))
+     dir))
 
 ; (defn xml-seq
 ;   "A tree seq on the xml elements as per xml/parse"
@@ -4539,11 +4539,11 @@
 ;   [s]
 ;     (contains? (. clojure.lang.Compiler specials) s))
 
-; (defn var?
-;   "Returns true if v is of type clojure.lang.Var"
-;   {:added "1.0"
-;    :static true}
-;   [v] (instance? clojure.lang.Var v))
+(defn var?
+  "Returns true if v is of type Var"
+  {:added "1.0"
+   :static true}
+  [v] (instance? Var v))
 
 (defn subs
   "Returns the substring of s beginning at start inclusive, and ending
@@ -4553,23 +4553,23 @@
   ([s start] (.send s "[]" start (count s)))
   ([s start end] (.send s "[]" start end)))
 
-; (defn max-key
-;   "Returns the x for which (k x), a number, is greatest."
-;   {:added "1.0"
-;    :static true}
-;   ([k x] x)
-;   ([k x y] (if (> (k x) (k y)) x y))
-;   ([k x y & more]
-;    (reduce1 #(max-key k %1 %2) (max-key k x y) more)))
+(defn max-key
+  "Returns the x for which (k x), a number, is greatest."
+  {:added "1.0"
+   :static true}
+  ([k x] x)
+  ([k x y] (if (> (k x) (k y)) x y))
+  ([k x y & more]
+   (reduce1 #(max-key k %1 %2) (max-key k x y) more)))
 
-; (defn min-key
-;   "Returns the x for which (k x), a number, is least."
-;   {:added "1.0"
-;    :static true}
-;   ([k x] x)
-;   ([k x y] (if (< (k x) (k y)) x y))
-;   ([k x y & more]
-;    (reduce1 #(min-key k %1 %2) (min-key k x y) more)))
+(defn min-key
+  "Returns the x for which (k x), a number, is least."
+  {:added "1.0"
+   :static true}
+  ([k x] x)
+  ([k x y] (if (< (k x) (k y)) x y))
+  ([k x y & more]
+   (reduce1 #(min-key k %1 %2) (min-key k x y) more)))
 
 ; (defn distinct
 ;   "Returns a lazy sequence of the elements of coll with duplicates removed"
