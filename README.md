@@ -34,6 +34,12 @@ should work as expected. The biggest performance issue stems from the
 limitation of "compiling" macros in an interpreted language. Nested
 macros compound this issue.
 
+Installation
+------------
+
+    gem install hammock-ruby
+
+
 Usage
 -----
 

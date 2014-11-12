@@ -6,7 +6,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'hammock/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "hammock"
+  spec.name          = "hammock-ruby"
   spec.version       = Hammock::VERSION
   spec.authors       = ["Joshua Davey"]
   spec.email         = ["josh@joshuadavey.com"]
