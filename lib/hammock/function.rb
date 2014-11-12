@@ -65,6 +65,15 @@ module Hammock
       "#{meta[:file]}:#{meta[:line]} in #@internal_name"
     end
 
+    def to_proc
+      fn = self
+      lambda { |*args| fn.call(*args) }
+    end
+
+    def to_block
+      Block.new(self)
+    end
+
     def call(*args)
       arity = find_arity!(*args)
 

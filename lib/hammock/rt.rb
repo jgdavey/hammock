@@ -15,6 +15,7 @@ require 'hammock/vector'
 require 'hammock/function'
 require 'hammock/multi_method'
 require 'hammock/atom'
+require 'hammock/block'
 require 'hammock/volatile'
 require 'hammock/chunked_cons'
 require 'hammock/chunk_buffer'
@@ -544,7 +545,16 @@ module Hammock
           method, *arguments = *args.first
           arguments = arguments.to_a.map {|arg| Compiler.evaluate(env, arg)}
         end
-        Compiler.evaluate(env, target).send(method.name, *arguments)
+        target = Compiler.evaluate(env, target)
+
+        if Hammock::Block === arguments.last
+          *arguments, block = arguments
+          block = block.value
+        else
+          block = nil
+        end
+
+        target.send(method.name, *arguments, &block)
       end
     end
 
