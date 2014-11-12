@@ -4868,22 +4868,24 @@
 ; 	h))))
 
 
-; (defn distinct?
-;   "Returns true if no two of the arguments are ="
-;   {:tag Boolean
-;    :added "1.0"
-;    :static true}
-;   ([x] true)
-;   ([x y] (not (= x y)))
-;   ([x y & more]
-;    (if (not= x y)
-;      (loop [s #{x y} [x & etc :as xs] more]
-;        (if xs
-;          (if (contains? s x)
-;            false
-;            (recur (conj s x) etc))
-;          true))
-;      false)))
+(defn distinct?
+  "Returns true if no two of the arguments are ="
+  {:tag Boolean
+   :added "1.0"
+   :static true}
+  ([x] true)
+  ([x y] (not (= x y)))
+  ([x y & more]
+   (if (not= x y)
+     (loop [s #{x y}
+            more more]
+       (let [[x & etc :as xs] more]
+         (if xs
+           (if (contains? s x)
+             false
+             (recur (conj s x) etc))
+           true)))
+     false)))
 
 ; (defn resultset-seq
 ;   "Creates and returns a lazy sequence of structmaps corresponding to
@@ -5281,66 +5283,66 @@
 
 ; ;;;;;;;;;;;;; nested associative ops ;;;;;;;;;;;
 
-; (defn get-in
-;   "Returns the value in a nested associative structure,
-;   where ks is a sequence of keys. Returns nil if the key
-;   is not present, or the not-found value if supplied."
-;   {:added "1.2"
-;    :static true}
-;   ([m ks]
-;      (reduce1 get m ks))
-;   ([m ks not-found]
-;      (loop [sentinel (Object.)
-;             m m
-;             ks (seq ks)]
-;        (if ks
-;          (let [m (get m (first ks) sentinel)]
-;            (if (identical? sentinel m)
-;              not-found
-;              (recur sentinel m (next ks))))
-;          m))))
+(defn get-in
+  "Returns the value in a nested associative structure,
+  where ks is a sequence of keys. Returns nil if the key
+  is not present, or the not-found value if supplied."
+  {:added "1.2"
+   :static true}
+  ([m ks]
+     (reduce1 get m ks))
+  ([m ks not-found]
+     (loop [sentinel (Object.)
+            m m
+            ks (seq ks)]
+       (if ks
+         (let [m (get m (first ks) sentinel)]
+           (if (identical? sentinel m)
+             not-found
+             (recur sentinel m (next ks))))
+         m))))
 
-; (defn assoc-in
-;   "Associates a value in a nested associative structure, where ks is a
-;   sequence of keys and v is the new value and returns a new nested structure.
-;   If any levels do not exist, hash-maps will be created."
-;   {:added "1.0"
-;    :static true}
-;   [m [k & ks] v]
-;   (if ks
-;     (assoc m k (assoc-in (get m k) ks v))
-;     (assoc m k v)))
+(defn assoc-in
+  "Associates a value in a nested associative structure, where ks is a
+  sequence of keys and v is the new value and returns a new nested structure.
+  If any levels do not exist, hash-maps will be created."
+  {:added "1.0"
+   :static true}
+  [m [k & ks] v]
+  (if ks
+    (assoc m k (assoc-in (get m k) ks v))
+    (assoc m k v)))
 
-; (defn update-in
-;   "'Updates' a value in a nested associative structure, where ks is a
-;   sequence of keys and f is a function that will take the old value
-;   and any supplied args and return the new value, and returns a new
-;   nested structure.  If any levels do not exist, hash-maps will be
-;   created."
-;   {:added "1.0"
-;    :static true}
-;   ([m [k & ks] f & args]
-;    (if ks
-;      (assoc m k (apply update-in (get m k) ks f args))
-;      (assoc m k (apply f (get m k) args)))))
+(defn update-in
+  "'Updates' a value in a nested associative structure, where ks is a
+  sequence of keys and f is a function that will take the old value
+  and any supplied args and return the new value, and returns a new
+  nested structure.  If any levels do not exist, hash-maps will be
+  created."
+  {:added "1.0"
+   :static true}
+  ([m [k & ks] f & args]
+   (if ks
+     (assoc m k (apply update-in (get m k) ks f args))
+     (assoc m k (apply f (get m k) args)))))
 
-; (defn update
-;   "'Updates' a value in an associative structure, where k is a
-;   key and f is a function that will take the old value
-;   and any supplied args and return the new value, and returns a new
-;   structure.  If the key does not exist, nil is passed as the old value."
-;   {:added "1.7"
-;    :static true}
-;   ([m k f]
-;    (assoc m k (f (get m k))))
-;   ([m k f x]
-;    (assoc m k (f (get m k) x)))
-;   ([m k f x y]
-;    (assoc m k (f (get m k) x y)))
-;   ([m k f x y z]
-;    (assoc m k (f (get m k) x y z)))
-;   ([m k f x y z & more]
-;    (assoc m k (apply f (get m k) x y z more))))
+(defn update
+  "'Updates' a value in an associative structure, where k is a
+  key and f is a function that will take the old value
+  and any supplied args and return the new value, and returns a new
+  structure.  If the key does not exist, nil is passed as the old value."
+  {:added "1.7"
+   :static true}
+  ([m k f]
+   (assoc m k (f (get m k))))
+  ([m k f x]
+   (assoc m k (f (get m k) x)))
+  ([m k f x y]
+   (assoc m k (f (get m k) x y)))
+  ([m k f x y z]
+   (assoc m k (f (get m k) x y z)))
+  ([m k f x y z & more]
+   (assoc m k (apply f (get m k) x y z more))))
 
 (defn empty?
   "Returns true if coll has no items - same as (not (seq coll)).

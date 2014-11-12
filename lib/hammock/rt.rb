@@ -161,6 +161,8 @@ module Hammock
     def self.assoc(sequence, key, val)
       if sequence
         sequence.assoc(key, val)
+      else
+        Map.new.assoc(key, val)
       end
     end
 
@@ -171,7 +173,7 @@ module Hammock
     end
 
     def self.get(sequence, key, not_found=nil)
-      if sequence
+      if ILookup === sequence
         sequence.val_at(key, not_found)
       end
     end
