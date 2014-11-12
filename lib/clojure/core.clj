@@ -2527,7 +2527,7 @@
 (defn reduced?
   "Returns true if x is the result of a call to reduced"
   {:added "1.5"}
-  ([x] (. RT (.reduced? x))))
+  ([x] (.reduced? RT x)))
 
 (defn take
   "Returns a lazy sequence of the first n items in coll, or all items if
@@ -4390,7 +4390,7 @@
     (let [gc (.. md captures size)]
       (if (zero? gc)
         (.first (.to_a md))
-        (.from_array Vector (.to_a md)))))
+        (vec (.to_a md)))))
 
 (defn re-seq
   "Returns a NON-lazy vector of successive matches of pattern in string,
@@ -4399,7 +4399,7 @@
    :static true}
   [re s]
   (let [res (.scan s re)]
-    (.from_array Vector res)))
+    (vec res)))
 
 (defn re-matches
   "Returns the match, if any, of string to pattern, using
@@ -6486,74 +6486,73 @@
 ;              (assoc! counts x (inc (get counts x 0))))
 ;            (transient {}) coll)))
 
-; (defn reductions
-;   "Returns a lazy seq of the intermediate values of the reduction (as
-;   per reduce) of coll by f, starting with init."
-;   {:added "1.2"}
-;   ([f coll]
-;      (lazy-seq
-;       (if-let [s (seq coll)]
-;         (reductions f (first s) (rest s))
-;         (list (f)))))
-;   ([f init coll]
-;      (if (reduced? init)
-;        (list @init)
-;        (cons init
-;              (lazy-seq
-;               (when-let [s (seq coll)]
-;                 (reductions f (f init (first s)) (rest s))))))))
+(defn reductions
+  "Returns a lazy seq of the intermediate values of the reduction (as
+  per reduce) of coll by f, starting with init."
+  {:added "1.2"}
+  ([f coll]
+     (lazy-seq
+      (if-let [s (seq coll)]
+        (reductions f (first s) (rest s))
+        (list (f)))))
+  ([f init coll]
+     (if (reduced? init)
+       (list @init)
+       (cons init
+             (lazy-seq
+              (when-let [s (seq coll)]
+                (reductions f (f init (first s)) (rest s))))))))
 
-; (defn rand-nth
-;   "Return a random element of the (sequential) collection. Will have
-;   the same performance characteristics as nth for the given
-;   collection."
-;   {:added "1.2"
-;    :static true}
-;   [coll]
-;   (nth coll (rand-int (count coll))))
+(defn rand-nth
+  "Return a random element of the (sequential) collection. Will have
+  the same performance characteristics as nth for the given
+  collection."
+  {:added "1.2"
+   :static true}
+  [coll]
+  (nth coll (rand-int (count coll))))
 
-; (defn partition-all
-;   "Returns a lazy sequence of lists like partition, but may include
-;   partitions with fewer than n items at the end.  Returns a stateful
-;   transducer when no collection is provided."
-;   {:added "1.2"
-;    :static true}
-;   ([^long n]
-;    (fn [f1]
-;      (let [a (java.util.ArrayList. n)]
-;        (fn
-;          ([] (f1))
-;          ([result]
-;             (let [result (if (.isEmpty a)
-;                            result
-;                            (let [v (vec (.toArray a))]
-;                              ;;clear first!
-;                              (.clear a)
-;                              (f1 result v)))]
-;               (f1 result)))
-;          ([result input]
-;             (.add a input)
-;             (if (= n (.size a))
-;               (let [v (vec (.toArray a))]
-;                 (.clear a)
-;                 (f1 result v))
-;               result))))))
-;   ([n coll]
-;      (partition-all n n coll))
-;   ([n step coll]
-;      (lazy-seq
-;       (when-let [s (seq coll)]
-;         (let [seg (doall (take n s))]
-;           (cons seg (partition-all n step (nthrest s step))))))))
+(defn partition-all
+  "Returns a lazy sequence of lists like partition, but may include
+  partitions with fewer than n items at the end.  Returns a stateful
+  transducer when no collection is provided."
+  {:added "1.2"
+   :static true}
+  ([n]
+   (fn [f1]
+     (let [a (Array.)]
+       (fn
+         ([] (f1))
+         ([result]
+            (let [result (if (.empty? a)
+                           result
+                           (let [v (vec a)]
+                             ;;clear first!
+                             (.clear a)
+                             (f1 result v)))]
+              (f1 result)))
+         ([result input]
+            (.push a input)
+            (if (= n (.length a))
+              (let [v (vec a)]
+                (.clear a)
+                (f1 result v))
+              result))))))
+  ([n coll]
+     (partition-all n n coll))
+  ([n step coll]
+     (lazy-seq
+      (when-let [s (seq coll)]
+        (let [seg (doall (take n s))]
+          (cons seg (partition-all n step (nthrest s step))))))))
 
-; (defn shuffle
-;   "Return a random permutation of coll"
-;   {:added "1.2"
-;    :static true}
-;   [^java.util.Collection coll]
-;   (let [al (java.util.ArrayList. coll)]
-;     (java.util.Collections/shuffle al)
-;     (clojure.lang.RT/vector (.toArray al))))
+(defn shuffle
+  "Return a random permutation of coll"
+  {:added "1.2"
+   :static true}
+  [coll]
+  (let [al (.. coll to_a shuffle)]
+    (vec al)))
 
 ; (defn map-indexed
 ;   "Returns a lazy sequence consisting of the result of applying f to 0
