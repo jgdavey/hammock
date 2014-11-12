@@ -936,25 +936,21 @@
 ;        (== y (first more)))
 ;      false)))
 
-; (defn max
-;   "Returns the greatest of the nums."
-;   {:added "1.0"
-;    :inline-arities >1?
-;    :inline (nary-inline 'max)}
-;   ([x] x)
-;   ([x y] (. clojure.lang.Numbers (max x y)))
-;   ([x y & more]
-;    (reduce1 max (max x y) more)))
+(defn max
+  "Returns the greatest of the nums."
+  {:added "1.0"}
+  ([x] x)
+  ([x y] (if (.< x y) y x))
+  ([x y & more]
+   (reduce1 max (max x y) more)))
 
-; (defn min
-;   "Returns the least of the nums."
-;   {:added "1.0"
-;    :inline-arities >1?
-;    :inline (nary-inline 'min)}
-;   ([x] x)
-;   ([x y] (. clojure.lang.Numbers (min x y)))
-;   ([x y & more]
-;    (reduce1 min (min x y) more)))
+(defn min
+  "Returns the least of the nums."
+  {:added "1.0"}
+  ([x] x)
+  ([x y] (if (.< y x) y x))
+  ([x y & more]
+   (reduce1 min (min x y) more)))
 
 (defn dec
   "Returns a number one less than num. Supports arbitrary precision."
@@ -6885,14 +6881,14 @@
                 (f1 result input))))))))
   ([coll] (sequence (dedupe) coll)))
 
-; (defn random-sample
-;   "Returns items from coll with random probability of prob (0.0 -
-;   1.0).  Returns a transducer when no collection is provided."
-;   {:added "1.7"}
-;   ([prob]
-;      (filter (fn [_] (< (rand) prob))))
-;   ([prob coll]
-;      (filter (fn [_] (< (rand) prob)) coll)))
+(defn random-sample
+  "Returns items from coll with random probability of prob (0.0 -
+  1.0).  Returns a transducer when no collection is provided."
+  {:added "1.7"}
+  ([prob]
+     (filter (fn [_] (< (rand) prob))))
+  ([prob coll]
+     (filter (fn [_] (< (rand) prob)) coll)))
 
 ; (deftype Iteration [xform coll]
 ;    Iterable
