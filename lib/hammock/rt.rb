@@ -270,9 +270,9 @@ module Hammock
       when String
         key = args.first
         sequence[key,1] if key < sequence
-      when Hammock::List
+      when Hammock::List, IChunkedSeq
         sequence.nth(*args)
-      else
+      when ILookup
         sequence.fetch(*args)
       end
     end

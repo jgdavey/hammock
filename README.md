@@ -55,6 +55,7 @@ Features
 * Ruby Array/Hash interop via aset, aget, etc
 * Namespaces, and require/refer
 * destructuring binding forms
+* Chunked sequences
 * try/catch/finally using Ruby exceptions
 
 
@@ -65,9 +66,9 @@ Planned Features
 * Protocols, and reify
 * tag-literals (data readers)
 * defrecord
-* Better printing support
+* Better printing support (via protocols)
 * sorted collections
-* read, eval, print (the functions themselves)
+* read, print (the functions themselves)
 * peek/pop
 * List comprehension (via for)
 * Queue

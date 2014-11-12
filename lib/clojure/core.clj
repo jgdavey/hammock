@@ -2771,11 +2771,11 @@
 
 ; ;; evaluation
 
-; (defn eval
-;   "Evaluates the form data structure (not text!) and returns the result."
-;   {:added "1.0"
-;    :static true}
-;   [form] (. clojure.lang.Compiler (eval form)))
+(defn eval
+  "Evaluates the form data structure (not text!) and returns the result."
+  {:added "1.0"
+   :static true}
+  [form] (.evaluate Hammock.Compiler form))
 
 (defmacro doseq
   "Repeatedly executes body (presumably for side-effects) with
@@ -4359,20 +4359,20 @@
   ([k x y & more]
    (reduce1 #(min-key k %1 %2) (min-key k x y) more)))
 
-; (defn distinct
-;   "Returns a lazy sequence of the elements of coll with duplicates removed"
-;   {:added "1.0"
-;    :static true}
-;   [coll]
-;     (let [step (fn step [xs seen]
-;                    (lazy-seq
-;                     ((fn [[f :as xs] seen]
-;                       (when-let [s (seq xs)]
-;                         (if (contains? seen f)
-;                           (recur (rest s) seen)
-;                           (cons f (step (rest s) (conj seen f))))))
-;                      xs seen)))]
-;       (step coll #{})))
+(defn distinct
+  "Returns a lazy sequence of the elements of coll with duplicates removed"
+  {:added "1.0"
+   :static true}
+  [coll]
+    (let [step (fn step [xs seen]
+                   (lazy-seq
+                    ((fn [[f :as xs] seen]
+                      (when-let [s (seq xs)]
+                        (if (contains? seen f)
+                          (recur (rest s) seen)
+                          (cons f (step (rest s) (conj seen f))))))
+                     xs seen)))]
+      (step coll #{})))
 
 
 
