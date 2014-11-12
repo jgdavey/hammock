@@ -51,6 +51,7 @@ Features
 * Atomic reference types (Var and Atom)
 * watches (for Atoms)
 * function composition, paritialling
+* functions for regular expressions
 * Namespaces, and require/refer
 * destructuring binding forms
 * try/catch/finally using Ruby exceptions
@@ -70,7 +71,6 @@ Planned Features
 * read, eval, print (the functions themselves)
 * Ruby Array/Hash interop via aset, aget, etc
 * peek/pop
-* functions for regular expressions
 * List comprehension (via for)
 * promise/deliver
 * multimethod "prefer"

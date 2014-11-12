@@ -4417,87 +4417,63 @@
 ;        `(when-not ~x
 ;           (throw (new AssertionError (str "Assert failed: " ~message "\n" (pr-str '~x))))))))
 
-; (defn test
-;   "test [v] finds fn at key :test in var metadata and calls it,
-;   presuming failure will throw exception"
-;   {:added "1.0"}
-;   [v]
-;     (let [f (:test (meta v))]
-;       (if f
-;         (do (f) :ok)
-;         :no-test)))
+(defn test
+  "test [v] finds fn at key :test in var metadata and calls it,
+  presuming failure will throw exception"
+  {:added "1.0"}
+  [v]
+    (let [f (:test (meta v))]
+      (if f
+        (do (f) :ok)
+        :no-test)))
 
-; (defn re-pattern
-;   "Returns an instance of java.util.regex.Pattern, for use, e.g. in
-;   re-matcher."
-;   {:tag java.util.regex.Pattern
-;    :added "1.0"
-;    :static true}
-;   [s] (if (instance? java.util.regex.Pattern s)
-;         s
-;         (. java.util.regex.Pattern (compile s))))
+(defn re-pattern
+  "Returns an instance of Regexp, for use, e.g. in re-matcher."
+  {:added "1.0"
+   :static true}
+  [s] (if (instance? Regexp s)
+        s
+        (. Regexp (compile s))))
 
-; (defn re-matcher
-;   "Returns an instance of java.util.regex.Matcher, for use, e.g. in
-;   re-find."
-;   {:tag java.util.regex.Matcher
-;    :added "1.0"
-;    :static true}
-;   [^java.util.regex.Pattern re s]
-;     (. re (matcher s)))
+(defn re-matcher
+  "Returns an instance of Ruby's MatchData."
+  {:added "1.0"
+   :static true}
+  [re s]
+    (. re (match s)))
 
-; (defn re-groups
-;   "Returns the groups from the most recent match/find. If there are no
-;   nested groups, returns a string of the entire match. If there are
-;   nested groups, returns a vector of the groups, the first element
-;   being the entire match."
-;   {:added "1.0"
-;    :static true}
-;   [^java.util.regex.Matcher m]
-;     (let [gc  (. m (groupCount))]
-;       (if (zero? gc)
-;         (. m (group))
-;         (loop [ret [] c 0]
-;           (if (<= c gc)
-;             (recur (conj ret (. m (group c))) (inc c))
-;             ret)))))
+(defn re-groups
+  "Returns the groups from the most recent match/find. If there are no
+  nested groups, returns a string of the entire match. If there are
+  nested groups, returns a vector of the groups, the first element
+  being the entire match."
+  {:added "1.0"
+   :static true}
+  [md]
+    (let [gc (.. md captures size)]
+      (if (zero? gc)
+        (.first (.to_a md))
+        (.from_array Vector (.to_a md)))))
 
-; (defn re-seq
-;   "Returns a lazy sequence of successive matches of pattern in string,
-;   using java.util.regex.Matcher.find(), each such match processed with
-;   re-groups."
-;   {:added "1.0"
-;    :static true}
-;   [^java.util.regex.Pattern re s]
-;   (let [m (re-matcher re s)]
-;     ((fn step []
-;        (when (. m (find))
-;          (cons (re-groups m) (lazy-seq (step))))))))
+(defn re-seq
+  "Returns a NON-lazy vector of successive matches of pattern in string,
+  using Ruby's String#scan."
+  {:added "1.0"
+   :static true}
+  [re s]
+  (let [res (.scan s re)]
+    (.from_array Vector res)))
 
-; (defn re-matches
-;   "Returns the match, if any, of string to pattern, using
-;   java.util.regex.Matcher.matches().  Uses re-groups to return the
-;   groups."
-;   {:added "1.0"
-;    :static true}
-;   [^java.util.regex.Pattern re s]
-;     (let [m (re-matcher re s)]
-;       (when (. m (matches))
-;         (re-groups m))))
-
-
-; (defn re-find
-;   "Returns the next regex match, if any, of string to pattern, using
-;   java.util.regex.Matcher.find().  Uses re-groups to return the
-;   groups."
-;   {:added "1.0"
-;    :static true}
-;   ([^java.util.regex.Matcher m]
-;    (when (. m (find))
-;      (re-groups m)))
-;   ([^java.util.regex.Pattern re s]
-;    (let [m (re-matcher re s)]
-;      (re-find m))))
+(defn re-matches
+  "Returns the match, if any, of string to pattern, using
+  Ruby MatchData.  Uses re-groups to return the
+  groups."
+  {:added "1.0"
+   :static true}
+  [re s]
+    (let [m (re-matcher re s)]
+      (when m
+        (re-groups m))))
 
 (defn rand
   "Returns a random floating point number between 0 (inclusive) and
