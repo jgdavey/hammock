@@ -11,11 +11,11 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Joshua Davey"]
   spec.email         = ["josh@joshuadavey.com"]
   spec.summary       = %q{Lisp inspired by Clojure}
-  spec.description   = %q{Like Clojure, but Rubyish}
+  spec.description   = %q{Kind of like Clojure, but Rubyish}
   spec.homepage      = "https://github.com/jgdavey/hammock"
-  spec.license       = "MIT"
+  spec.license       = "Eclipse Public License"
 
-  spec.files         = `git ls-files -z`.split("\x0")
+  spec.files         = Dir["{lib,spec}/**/*"] + %w[bin/hammock README.md]
   spec.executables   = %w[hammock]
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
