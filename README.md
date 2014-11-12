@@ -3,8 +3,12 @@ Hammock
 
 A partial implementation of [Clojure][] in pure Ruby.
 
-**Warning**: this software is alpha quality and bugridden. Production
-usage is not recommended.
+**Warning**: this software is alpha quality and bugridden. At this
+stage, Hammock is a **proof of concept**, and not meant to be used in
+production.
+
+If there is sufficient interest, I will probably want to rewrite most of
+what is here, using a more disciplined approach.
 
 Why?
 ----
@@ -23,6 +27,12 @@ ton about Clojure's internals. In fact, even if no one ever uses this
 library, I will still consider it a success. **If you've never implemented
 a Lisp before, I highly recommend it.** And Ruby's flexibility lends
 itself to exploring this kind of thing.
+
+Performance struggles here, adding significant weight to an already
+interpreted host language. That said, most "basic" Clojure programs
+should work as expected. The biggest performance issue stems from the
+limitation of "compiling" macros in an interpreted language. Nested
+macros compound this issue.
 
 Usage
 -----
@@ -74,8 +84,9 @@ Planned Features
 * Queue
 * promise/deliver
 * multimethod "prefer"
-* letfn
+* letfn (maybe?)
 * spit/slurp
+* Better error handling
 
 
 Probably never, or not applicable in Ruby
