@@ -3552,95 +3552,32 @@
      ret#))
 
 
-; (import '(java.lang.reflect Array))
+(defn alength
+  "Returns the length of the Ruby array."
+  {:added "1.0"}
+  [array] (.length array))
 
-; (defn alength
-;   "Returns the length of the Java array. Works on arrays of all
-;   types."
-;   {:inline (fn [a] `(. clojure.lang.RT (alength ~a)))
-;    :added "1.0"}
-;   [array] (. clojure.lang.RT (alength array)))
+(defn aclone
+  "Returns a clone of the Ruby array."
+  {:added "1.0"}
+  [array] (.dup array))
 
-; (defn aclone
-;   "Returns a clone of the Java array. Works on arrays of known
-;   types."
-;   {:inline (fn [a] `(. clojure.lang.RT (aclone ~a)))
-;    :added "1.0"}
-;   [array] (. clojure.lang.RT (aclone array)))
+(defn aget
+  "Returns the value at the index/indices."
+  {:added "1.0"}
+  ([array idx]
+   (.send array "[]" idx))
+  ([array idx & idxs]
+   (apply aget (aget array idx) idxs)))
 
-; (defn aget
-;   "Returns the value at the index/indices. Works on Java arrays of all
-;   types."
-;   {:inline (fn [a i] `(. clojure.lang.RT (aget ~a (int ~i))))
-;    :inline-arities #{2}
-;    :added "1.0"}
-;   ([array idx]
-;    (clojure.lang.Reflector/prepRet (.getComponentType (class array)) (. Array (get array idx))))
-;   ([array idx & idxs]
-;    (apply aget (aget array idx) idxs)))
-
-; (defn aset
-;   "Sets the value at the index/indices. Works on Java arrays of
-;   reference types. Returns val."
-;   {:inline (fn [a i v] `(. clojure.lang.RT (aset ~a (int ~i) ~v)))
-;    :inline-arities #{3}
-;    :added "1.0"}
-;   ([array idx val]
-;    (. Array (set array idx val))
-;    val)
-;   ([array idx idx2 & idxv]
-;    (apply aset (aget array idx) idx2 idxv)))
-
-; (defmacro
-;   ^{:private true}
-;   def-aset [name method coerce]
-;     `(defn ~name
-;        {:arglists '([~'array ~'idx ~'val] [~'array ~'idx ~'idx2 & ~'idxv])}
-;        ([array# idx# val#]
-;         (. Array (~method array# idx# (~coerce val#)))
-;         val#)
-;        ([array# idx# idx2# & idxv#]
-;         (apply ~name (aget array# idx#) idx2# idxv#))))
-
-; (def-aset
-;   ^{:doc "Sets the value at the index/indices. Works on arrays of int. Returns val."
-;     :added "1.0"}
-;   aset-int setInt int)
-
-; (def-aset
-;   ^{:doc "Sets the value at the index/indices. Works on arrays of long. Returns val."
-;     :added "1.0"}
-;   aset-long setLong long)
-
-; (def-aset
-;   ^{:doc "Sets the value at the index/indices. Works on arrays of boolean. Returns val."
-;     :added "1.0"}
-;   aset-boolean setBoolean boolean)
-
-; (def-aset
-;   ^{:doc "Sets the value at the index/indices. Works on arrays of float. Returns val."
-;     :added "1.0"}
-;   aset-float setFloat float)
-
-; (def-aset
-;   ^{:doc "Sets the value at the index/indices. Works on arrays of double. Returns val."
-;     :added "1.0"}
-;   aset-double setDouble double)
-
-; (def-aset
-;   ^{:doc "Sets the value at the index/indices. Works on arrays of short. Returns val."
-;     :added "1.0"}
-;   aset-short setShort short)
-
-; (def-aset
-;   ^{:doc "Sets the value at the index/indices. Works on arrays of byte. Returns val."
-;     :added "1.0"}
-;   aset-byte setByte byte)
-
-; (def-aset
-;   ^{:doc "Sets the value at the index/indices. Works on arrays of char. Returns val."
-;     :added "1.0"}
-;   aset-char setChar char)
+(defn aset
+  "Sets the value at the index/indices."
+  {:added "1.0"}
+  ([array idx val]
+   (.send array "[]=" idx val)
+   val)
+  ([array idx idx2 & idxv]
+   (apply aset (aget array idx) idx2 idxv)))
 
 ; (defn make-array
 ;   "Creates and returns an array of instances of the specified class of
@@ -4762,144 +4699,33 @@
   (when (instance? Hammock.IPersistentCollection coll)
     (.empty coll)))
 
-; (defmacro amap
-;   "Maps an expression across an array a, using an index named idx, and
-;   return value named ret, initialized to a clone of a, then setting
-;   each element of ret to the evaluation of expr, returning the new
-;   array ret."
-;   {:added "1.0"}
-;   [a idx ret expr]
-;   `(let [a# ~a
-;          ~ret (aclone a#)]
-;      (loop  [~idx 0]
-;        (if (< ~idx  (alength a#))
-;          (do
-;            (aset ~ret ~idx ~expr)
-;            (recur (unchecked-inc ~idx)))
-;          ~ret))))
+(defmacro amap
+  "Maps an expression across an array a, using an index named idx, and
+  return value named ret, initialized to a clone of a, then setting
+  each element of ret to the evaluation of expr, returning the new
+  array ret."
+  {:added "1.0"}
+  [a idx ret expr]
+  `(let [a# ~a
+         ~ret (aclone a#)]
+     (loop  [~idx 0]
+       (if (< ~idx  (alength a#))
+         (do
+           (aset ~ret ~idx ~expr)
+           (recur (inc ~idx)))
+         ~ret))))
 
-; (defmacro areduce
-;   "Reduces an expression across an array a, using an index named idx,
-;   and return value named ret, initialized to init, setting ret to the
-;   evaluation of expr at each step, returning ret."
-;   {:added "1.0"}
-;   [a idx ret init expr]
-;   `(let [a# ~a]
-;      (loop  [~idx 0 ~ret ~init]
-;        (if (< ~idx  (alength a#))
-;          (recur (unchecked-inc ~idx) ~expr)
-;          ~ret))))
-
-; (defn float-array
-;   "Creates an array of floats"
-;   {:inline (fn [& args] `(. clojure.lang.Numbers float_array ~@args))
-;    :inline-arities #{1 2}
-;    :added "1.0"}
-;   ([size-or-seq] (. clojure.lang.Numbers float_array size-or-seq))
-;   ([size init-val-or-seq] (. clojure.lang.Numbers float_array size init-val-or-seq)))
-
-; (defn boolean-array
-;   "Creates an array of booleans"
-;   {:inline (fn [& args] `(. clojure.lang.Numbers boolean_array ~@args))
-;    :inline-arities #{1 2}
-;    :added "1.1"}
-;   ([size-or-seq] (. clojure.lang.Numbers boolean_array size-or-seq))
-;   ([size init-val-or-seq] (. clojure.lang.Numbers boolean_array size init-val-or-seq)))
-
-; (defn byte-array
-;   "Creates an array of bytes"
-;   {:inline (fn [& args] `(. clojure.lang.Numbers byte_array ~@args))
-;    :inline-arities #{1 2}
-;    :added "1.1"}
-;   ([size-or-seq] (. clojure.lang.Numbers byte_array size-or-seq))
-;   ([size init-val-or-seq] (. clojure.lang.Numbers byte_array size init-val-or-seq)))
-
-; (defn char-array
-;   "Creates an array of chars"
-;   {:inline (fn [& args] `(. clojure.lang.Numbers char_array ~@args))
-;    :inline-arities #{1 2}
-;    :added "1.1"}
-;   ([size-or-seq] (. clojure.lang.Numbers char_array size-or-seq))
-;   ([size init-val-or-seq] (. clojure.lang.Numbers char_array size init-val-or-seq)))
-
-; (defn short-array
-;   "Creates an array of shorts"
-;   {:inline (fn [& args] `(. clojure.lang.Numbers short_array ~@args))
-;    :inline-arities #{1 2}
-;    :added "1.1"}
-;   ([size-or-seq] (. clojure.lang.Numbers short_array size-or-seq))
-;   ([size init-val-or-seq] (. clojure.lang.Numbers short_array size init-val-or-seq)))
-
-; (defn double-array
-;   "Creates an array of doubles"
-;   {:inline (fn [& args] `(. clojure.lang.Numbers double_array ~@args))
-;    :inline-arities #{1 2}
-;    :added "1.0"}
-;   ([size-or-seq] (. clojure.lang.Numbers double_array size-or-seq))
-;   ([size init-val-or-seq] (. clojure.lang.Numbers double_array size init-val-or-seq)))
-
-; (defn object-array
-;   "Creates an array of objects"
-;   {:inline (fn [arg] `(. clojure.lang.RT object_array ~arg))
-;    :inline-arities #{1}
-;    :added "1.2"}
-;   ([size-or-seq] (. clojure.lang.RT object_array size-or-seq)))
-
-; (defn int-array
-;   "Creates an array of ints"
-;   {:inline (fn [& args] `(. clojure.lang.Numbers int_array ~@args))
-;    :inline-arities #{1 2}
-;    :added "1.0"}
-;   ([size-or-seq] (. clojure.lang.Numbers int_array size-or-seq))
-;   ([size init-val-or-seq] (. clojure.lang.Numbers int_array size init-val-or-seq)))
-
-; (defn long-array
-;   "Creates an array of longs"
-;   {:inline (fn [& args] `(. clojure.lang.Numbers long_array ~@args))
-;    :inline-arities #{1 2}
-;    :added "1.0"}
-;   ([size-or-seq] (. clojure.lang.Numbers long_array size-or-seq))
-;   ([size init-val-or-seq] (. clojure.lang.Numbers long_array size init-val-or-seq)))
-
-; (definline booleans
-;   "Casts to boolean[]"
-;   {:added "1.1"}
-;   [xs] `(. clojure.lang.Numbers booleans ~xs))
-
-; (definline bytes
-;   "Casts to bytes[]"
-;   {:added "1.1"}
-;   [xs] `(. clojure.lang.Numbers bytes ~xs))
-
-; (definline chars
-;   "Casts to chars[]"
-;   {:added "1.1"}
-;   [xs] `(. clojure.lang.Numbers chars ~xs))
-
-; (definline shorts
-;   "Casts to shorts[]"
-;   {:added "1.1"}
-;   [xs] `(. clojure.lang.Numbers shorts ~xs))
-
-; (definline floats
-;   "Casts to float[]"
-;   {:added "1.0"}
-;   [xs] `(. clojure.lang.Numbers floats ~xs))
-
-; (definline ints
-;   "Casts to int[]"
-;   {:added "1.0"}
-;   [xs] `(. clojure.lang.Numbers ints ~xs))
-
-; (definline doubles
-;   "Casts to double[]"
-;   {:added "1.0"}
-;   [xs] `(. clojure.lang.Numbers doubles ~xs))
-
-; (definline longs
-;   "Casts to long[]"
-;   {:added "1.0"}
-;   [xs] `(. clojure.lang.Numbers longs ~xs))
+(defmacro areduce
+  "Reduces an expression across an array a, using an index named idx,
+  and return value named ret, initialized to init, setting ret to the
+  evaluation of expr at each step, returning ret."
+  {:added "1.0"}
+  [a idx ret init expr]
+  `(let [a# ~a]
+     (loop  [~idx 0 ~ret ~init]
+       (if (< ~idx  (alength a#))
+         (recur (inc ~idx) ~expr)
+         ~ret))))
 
 ; (import '(java.util.concurrent BlockingQueue LinkedBlockingQueue))
 
