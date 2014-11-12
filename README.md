@@ -52,6 +52,7 @@ Features
 * watches (for Atoms)
 * function composition, paritialling
 * functions for regular expressions
+* Ruby Array/Hash interop via aset, aget, etc
 * Namespaces, and require/refer
 * destructuring binding forms
 * try/catch/finally using Ruby exceptions
@@ -60,22 +61,19 @@ Features
 Planned Features
 ----------------
 
-* Queue
 * Transients
 * Protocols, and reify
 * tag-literals (data readers)
 * defrecord
 * Better printing support
 * sorted collections
-* sort
 * read, eval, print (the functions themselves)
-* Ruby Array/Hash interop via aset, aget, etc
 * peek/pop
 * List comprehension (via for)
+* Queue
 * promise/deliver
 * multimethod "prefer"
 * spit/slurp
-* Lots of clojure.core functions that haven't been implemented for various reasons
 
 
 Probably never, or not applicable in Ruby

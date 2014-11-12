@@ -2655,42 +2655,42 @@
   (when-let [line (.gets rdr)]
     (cons line (lazy-seq (line-seq rdr)))))
 
-; (defn comparator
-;   "Returns an implementation of java.util.Comparator based upon pred."
-;   {:added "1.0"
-;    :static true}
-;   [pred]
-;     (fn [x y]
-;       (cond (pred x y) -1 (pred y x) 1 :else 0)))
+(defn comparator
+  "Returns an comparator (similar to <=>) based upon pred."
+  {:added "1.0"
+   :static true}
+  [pred]
+    (fn [x y]
+      (cond (pred x y) -1 (pred y x) 1 :else 0)))
 
-; (defn sort
-;   "Returns a sorted sequence of the items in coll. If no comparator is
-;   supplied, uses compare.  comparator must implement
-;   java.util.Comparator.  If coll is a Java array, it will be modified.
-;   To avoid this, sort a copy of the array."
-;   {:added "1.0"
-;    :static true}
-;   ([coll]
-;    (sort compare coll))
-;   ([^java.util.Comparator comp coll]
-;    (if (seq coll)
-;      (let [a (to-array coll)]
-;        (. java.util.Arrays (sort a comp))
-;        (seq a))
-;      ())))
+(defn sort
+  "Returns a sorted sequence of the items in coll as if by <=>. If
+  coll is a Ruby array, it will be modified.  To avoid this, sort a
+  copy of the array."
+  {:added "1.0"
+   :static true}
+  ([coll]
+   (sort compare coll))
+  ([comp coll]
+   (if (seq coll)
+     (let [a (to-array coll)]
+       (.sort! a (.to_block comp))
+       (seq a))
+     ())))
 
-; (defn sort-by
-;   "Returns a sorted sequence of the items in coll, where the sort
-;   order is determined by comparing (keyfn item).  If no comparator is
-;   supplied, uses compare.  comparator must implement
-;   java.util.Comparator.  If coll is a Java array, it will be modified.
-;   To avoid this, sort a copy of the array."
-;   {:added "1.0"
-;    :static true}
-;   ([keyfn coll]
-;    (sort-by keyfn compare coll))
-;   ([keyfn ^java.util.Comparator comp coll]
-;    (sort (fn [x y] (. comp (compare (keyfn x) (keyfn y)))) coll)))
+(defn sort-by
+  "Returns a sorted sequence of the items in coll, where the sort
+  order is determined by comparing (keyfn item).  If no comparator is
+  supplied, uses compare.  comparator must be a function that returns
+  {-1,0,1}, a la <=>.  If coll is a Java array, it will be modified.
+  To avoid this, sort a copy of the array."
+  {:added "1.0"
+   :static true}
+  ([keyfn coll]
+   (sort-by keyfn compare coll))
+  ([keyfn comp coll]
+   (let [c (fn [x y] (comp (keyfn x) (keyfn y)))]
+     (sort c coll))))
 
 (defn dorun
   "When lazy sequences are produced via functions that have side
