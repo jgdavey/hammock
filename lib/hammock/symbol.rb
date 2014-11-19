@@ -36,11 +36,14 @@ module Hammock
 
     def constant
       return @constant if defined?(@constant)
-      n = name.gsub(".", "::")
-      @constant = begin
-                    Object.const_defined?(n) && Object.const_get(n)
-                  rescue NameError
-                  end
+      segments = name.split(".")
+      begin
+        @constant = segments.reduce(Object) do |parent, n|
+          parent.const_defined?(n) && parent.const_get(n)
+        end
+      rescue NameError => e
+        $stderr.puts e
+      end
     end
 
     def inspect
