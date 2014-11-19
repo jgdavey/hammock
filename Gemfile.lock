@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hammock (0.0.1.alpha)
+    hammock-ruby (0.0.1.alpha)
       atomic (~> 1.1)
       hamster (~> 0.4.3)
 
@@ -23,5 +23,5 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (~> 1.6)
-  hammock!
+  hammock-ruby!
   pry
