@@ -16,7 +16,12 @@ module Hammock
       while line = Readline.readline('> ', true)
         begin
           line = StringIO.new(line)
-          p Hammock::RT.compile_and_eval(reader.read(line))
+          unless line.string.casecmp("exit") == 0
+            p Hammock::RT.compile_and_eval(reader.read(line))
+          else
+            puts "Bye for now"
+            break
+          end
         rescue Exception => ex
           puts "ERROR: #{ex.class} #{ex}"
           puts ex.backtrace
