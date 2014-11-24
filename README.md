@@ -110,7 +110,7 @@ Probably never, or not applicable in Ruby
 * annotations
 
 
-Tested against the following ruby versions
+Tested against the following Ruby versions
 ------------------------------------------
 
 * Ruby 2.1
