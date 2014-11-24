@@ -109,6 +109,14 @@ Probably never, or not applicable in Ruby
 * monitors/locking
 * annotations
 
+
+Tested against the following ruby versions
+------------------------------------------
+
+* Ruby 2.1
+* Ruby 1.9
+
+
 License
 -------
 
